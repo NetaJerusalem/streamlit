@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from Utilities import AddAnswer
+from Utilities import WriteAnswer
 
 st.set_page_config(
     page_title="Hello",
