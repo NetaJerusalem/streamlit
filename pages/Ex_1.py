@@ -6,7 +6,7 @@ import os
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-names = pd.read_csv("data\\names.csv")
+names = pd.read_csv("data/names.csv")
 
 st.set_page_config(page_title="Ex1", page_icon="📈")
 name = st.text_input("enter your name")
@@ -15,9 +15,9 @@ if name and name not in names["NAME"].values:
     st.dataframe(names)
     st.stop()
 elif name:
-    write_answer = WriteAnswer(name, "data\\status.csv")
+    write_answer = WriteAnswer(name, "data/status.csv")
     st.title("Welcome to Neta Ex 1")
-    df_status = pd.read_csv("data\\status.csv")
+    df_status = pd.read_csv("data/status.csv")
     st.dataframe(df_status.loc[df_status["NAME"]== name])
 
     with st.form("Q 1"):
