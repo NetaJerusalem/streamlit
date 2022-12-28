@@ -1,11 +1,13 @@
 import pandas as pd
 import streamlit as st
-names_df = pd.read_csv("data/names.csv")
-status_df = pd.read_csv("data/status.csv")
+from pages.data.Utilities import df_names
+
+
+status_df = pd.read_csv("pages\\data\\status.csv",skipinitialspace = True)
 password = st.text_input("password")
 if password == "13245":
     st.title("Welcome to Neta streamlit secend page")
-    st.dataframe(names_df)
+    st.dataframe(df_names)
     if st.button("relod"):
         st.dataframe(status_df)
 
