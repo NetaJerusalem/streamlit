@@ -1,18 +1,24 @@
 import pandas as pd
 from typing import List, Tuple, Callable, TextIO
 import streamlit as st
+from pathlib import Path
 
 
 
-#load data
-df_names = pd.read_csv("pages\\data\\names.csv",skipinitialspace = True)
-df_names["NAME"] = df_names["NAME"].map(str.strip)
+class Utility:
+    #load data
+    utilities_path = Path(__file__).parents[0]
 
+    df_names = pd.read_csv(utilities_path / "names.csv",skipinitialspace = True)
+    df_names["NAME"] = df_names["NAME"].map(str.strip)
+
+    df_status = pd.read_csv(utilities_path / "status.csv",skipinitialspace = True)
+    df_status["NAME"] = df_status["NAME"].map(str.strip)
 
 
 class WriteAnswer:
-    def __init__(self, name: str, file_name: str, test_data_fn: Callable = None) -> None:
-        assert name in df_names["NAME"].values, "Name must be in names"
+    def __init__(self, name: str, file_name: Path, test_data_fn: Callable = None) -> None:
+        assert name in Utility.df_names["NAME"].values, "Name must be in names"
         self.name = name
         self.file_name = file_name
         self.test_data = test_data_fn

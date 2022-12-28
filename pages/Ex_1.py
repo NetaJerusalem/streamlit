@@ -1,4 +1,8 @@
-from pages.data.Utilities import WriteAnswer, df_names
+from pages.Utilities.Utilities import WriteAnswer,Utility
+df_status = Utility.df_status
+df_names = Utility.df_names
+utilities_path = Utility.utilities_path
+
 import pandas as pd
 import streamlit as st
 
@@ -10,20 +14,18 @@ if name and name not in df_names["NAME"].values:
     st.dataframe(df_names)
     st.stop()
 elif name:
-    write_answer = WriteAnswer(name, "pages\\data\\status.csv")
+    write_answer = WriteAnswer(name, utilities_path / "status.csv")
     st.title("Welcome to Neta Ex 1")
-    df_status = pd.read_csv("pages\\data\\status.csv")
-    st.dataframe(df_status.loc[df_status["NAME"]== name])
+    df_status = pd.read_csv(utilities_path / "status.csv")
+    st.dataframe(df_status.loc[df_status["NAME"] == name])
 
     with st.form("Q 1"):
         st.write("Qua")
         answer = st.text_input("Answer")
     # Every form must have a submit button.
         submitted = st.form_submit_button("Submit")
-        if submitted:
+        if submitted and answer:
             write_answer.add_answer(answer, 1)
-
-
 
     with st.form("Q 2"):
         st.code("""for i in range(10):
@@ -33,10 +35,8 @@ elif name:
 
     # Every form must have a submit button.
         submitted = st.form_submit_button("Submit")
-        if submitted:
+        if submitted and answer:
             write_answer.add_answer(answer, 2)
-
-
 
     with st.form("Q 3"):
         st.write("Qua")
@@ -44,14 +44,13 @@ elif name:
 
     # Every form must have a submit button.
         submitted = st.form_submit_button("Submit")
-        if submitted:
+        if submitted and answer:
             write_answer.add_answer(answer, 3)
-
 
     with st.form("Q 4"):
         st.write("Qua")
         answer = st.text_input("Answer")
     # Every form must have a submit button.
         submitted = st.form_submit_button("Submit")
-        if submitted:
+        if submitted and answer:
             write_answer.add_answer(answer, 4)
