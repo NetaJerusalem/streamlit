@@ -20,3 +20,4 @@ path = st.text_input("enter path")
 buuton = st.button("load form path")
 if buuton:
     st.dataframe(pd.read_csv(path))
+    st.code(__file__)
