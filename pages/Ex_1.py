@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from pages.Utilities.Utilities import WriteAnswer, Utility
+from pages.Utilities.Utilities import WriteAnswer, Utility ,Questions
 df_status = Utility.df_status
 df_names = Utility.df_names
 utilities_path = Utility.utilities_path
@@ -57,3 +57,4 @@ for i in range(10):
         submitted = st.form_submit_button("Submit")
         if submitted and answer:
             write_answer.add_answer(answer, 4)
+    Questions.execute_question(5,"enter code",write_answer=write_answer)
