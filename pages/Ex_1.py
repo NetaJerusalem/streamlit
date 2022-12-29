@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from pages.Utilities.Utilities import WriteAnswer, Utility ,Questions
+from pages.Utilities.Utilities import WriteAnswer, Utility, Questions
 df_status = Utility.df_status
 df_names = Utility.df_names
 utilities_path = Utility.utilities_path
@@ -19,42 +19,24 @@ elif name:
     st.dataframe(df_status.loc[df_status["NAME"] ==
                  name], use_container_width=True)
 
-    with st.form("Q 1"):
-        st.write("Qua")
-        answer = st.text_input("Answer")
-    # Every form must have a submit button.
-        submitted = st.form_submit_button("Submit")
-        if submitted and answer:
-            write_answer.add_answer(answer, 1)
+    Questions.execute_question(1, "Printing the numbers 1 through 10:",
+                               write_answer=write_answer,
+                               test=Questions.test_code_by_re(r'^[1-9\n]*10\n$'))
 
-    with st.form("Q 2"):
-        st.code(
-            """
-for i in range(10):
-    for j in range(10):
-        print (i*j)
-""")
-        answer = st.text_input("Answer")
+    Questions.execute_question(2, "Printing the elements of a list of strings:",
+                               code='my_list = ["apple", "banana", "cherry"]',
+                               write_answer=write_answer,
+                               test=Questions.test_code_by_re(r'^(apple|banana|cherry)\n'))
 
-    # Every form must have a submit button.
-        submitted = st.form_submit_button("Submit")
-        if submitted and answer:
-            write_answer.add_answer(answer, 2)
+    Questions.execute_question(3, "Printing the elements of a list of numbers:",
+                               code='my_list = [1, 2, 3, 4, 5]',
+                               write_answer=write_answer,
+                               test=Questions.test_code_by_re(r'^[1-5\n]*$'))
 
-    with st.form("Q 3"):
-        st.write("Qua")
-        answer = st.text_input("Answer")
-
-    # Every form must have a submit button.
-        submitted = st.form_submit_button("Submit")
-        if submitted and answer:
-            write_answer.add_answer(answer, 3)
-
-    with st.form("Q 4"):
-        st.write("Qua")
-        answer = st.text_input("Answer")
-    # Every form must have a submit button.
-        submitted = st.form_submit_button("Submit")
-        if submitted and answer:
-            write_answer.add_answer(answer, 4)
-    Questions.execute_question(5,"enter code",write_answer=write_answer)
+    Questions.execute_question(4, "Printing the elements of a list of lists:",
+                               code='my_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]',
+                               write_answer=write_answer,
+                               test=Questions.test_code_by_re(r'^[1-9\n]*$'))
+    Questions.execute_question(5, "Printing the elements of a string one character at a time",
+                               code='my_string = "Hello, world!"',
+                               write_answer=write_answer)

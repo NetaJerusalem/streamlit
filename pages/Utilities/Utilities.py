@@ -61,13 +61,13 @@ class WriteAnswer:
 
 class Questions:
     def execute_question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None,
-                         write_answer: WriteAnswer = None, show_output: bool = True,
+                         write_answer: WriteAnswer = None, code: str = None, show_output: bool = True,
                          title: str = None, add_code: str = None):
         # if title is not None
         form_title = title or f"Question {num_questoin}"
         with st.form(form_title):
             st.write(questoin)
-            code = st_ace(language="python", auto_update=True)
+            code = st_ace(value=code, language="python", auto_update=True)
 
             # Every form must have a submit button.
             submitted = st.form_submit_button("Submit")
@@ -76,7 +76,7 @@ class Questions:
             you cannot see errors, or commands that are not printed''')
 
             # evaluate the code
-            if add_code: 
+            if add_code:
                 code = add_code + code
             output = subprocess.run(
                 ['python', '-c', code], capture_output=True, text=True).stdout
@@ -97,3 +97,9 @@ class Questions:
                 st.write("try again... answer not match")
             elif submitted and answer:
                 write_answer.add_answer(answer, num_questoin)
+
+    def test_code_by_re(pattern: re.Pattern) -> Callable[[str], bool]:
+        def f(code: str) -> bool:
+            f_pattern = re.compile(pattern)
+            return bool(f_pattern.match(code))
+        return f
