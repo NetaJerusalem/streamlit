@@ -10,7 +10,6 @@ from streamlit_ace import st_ace
 class Utility:
     # load data
     utilities_path = Path(__file__).parents[0]
-
     df_names = pd.read_csv(utilities_path / "names.csv", skipinitialspace=True)
     df_names["NAME"] = df_names["NAME"].map(str.strip)
 
@@ -61,8 +60,8 @@ class WriteAnswer:
 
 class Questions:
     def execute_question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None,
-                         write_answer: WriteAnswer = None, code: str = None, show_output: bool = True,
-                         title: str = None, add_code: str = None):
+                         write_answer: WriteAnswer = None, code: str = "", show_output: bool = True,
+                         title: str = None, add_code: str = None, caption=None):
         # if title is not None
         form_title = title or f"Question {num_questoin}"
         with st.form(form_title):
@@ -70,11 +69,10 @@ class Questions:
             code = st_ace(value=code, language="python", auto_update=True)
 
             # Every form must have a submit button.
-            submitted = st.form_submit_button("Submit")
-            st.caption(''' Please note: :sunglasses:   \
-            you can only see what is printed in the form through the `print` command,
-            you cannot see errors, or commands that are not printed''')
+            if caption:
+                st.caption(caption)
 
+            submitted = st.form_submit_button("Submit")
             # evaluate the code
             if add_code:
                 code = add_code + code
