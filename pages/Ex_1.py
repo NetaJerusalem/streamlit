@@ -1,3 +1,8 @@
+import sys, os
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
 import streamlit as st
 import pandas as pd
 from pages.Utilities.Utilities import WriteAnswers, DataLoader, Questions, Utilities
