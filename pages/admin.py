@@ -1,4 +1,4 @@
-from pages.Utilities.Utilities import Utility
+from pages.Utilities.Utilities import DataLoader, Utilities
 import pandas as pd
 import streamlit as st
 import os
@@ -9,9 +9,7 @@ sys.path.append(parent)
 
 
 # status_df = pd.read_csv("pages\\data\\status.csv",skipinitialspace = True)
-password = st.text_input("password")
-if password == "13245":
-    st.title("admin")
-    st.dataframe(Utility.df_names)
+if Utilities.enter_name() == "admin":
+    st.dataframe(DataLoader.df_names)
     if st.button("reload"):
-        st.dataframe(Utility.load_df_status())
+        st.dataframe(DataLoader.load_df_status())
