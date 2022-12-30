@@ -1,11 +1,12 @@
 import sys, os
-current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(current)
-sys.path.append(parent)
+# current = os.path.dirname(os.path.realpath(__file__))
+# parent = os.path.dirname(current)
+# sys.path.append(parent)
 
 import streamlit as st
 import pandas as pd
 from pages.Utilities.Utilities import WriteAnswers, DataLoader, Questions, Utilities
+from __init__ import Q
 df_status = DataLoader.df_status
 df_names = DataLoader.df_names
 utilities_path = DataLoader.utilities_path
@@ -52,3 +53,4 @@ Questions.execute_question(8, '''Printing the elements of a list of numbers,
                                         but only the ones that are divisible by both 2 and 3:''',
                            code='my_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12,13]',
                            write_answer=write_answers)
+
