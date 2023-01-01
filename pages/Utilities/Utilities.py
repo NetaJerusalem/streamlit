@@ -5,7 +5,7 @@ import streamlit as st
 from pathlib import Path
 import subprocess
 from streamlit_ace import st_ace
-PASSWORD = "a13245"
+PASSWORD = "13245"
 
 
 class DataLoader:
@@ -109,34 +109,37 @@ class Questions:
 class Utilities:
     """many tools"""
     def enter_name() -> str:
-        """
-        Stop the page until the name is entered
-        """
+        """avoid load pange until user enter to system 
+        and register the name in `st.session_state`
+
+        Returns:
+            str: name of user
+        """        
         if "user_name" not in st.session_state:
+            # create a new placeholder for button and input fields
             plaseholder = st.empty()
-            button_holder = st.empty()
             user_name = plaseholder.text_input(
                 "Enter your username", autocomplete="name")
-            submitted = button_holder.button("Submit")
-            if submitted and user_name:
-                if user_name == "admin":
-                    password = plaseholder.text_input("Enter password")
-                    st.write(password == PASSWORD)
-                    if password == PASSWORD:
-                        st.session_state.user_name: str = user_name
-                        plaseholder.success(
-                            f'{user_name} Welcome to our system')
-                        button_holder.empty()
-                        return user_name
-                elif user_name in DataLoader.df_names["NAME"].values:
-                    button_holder.empty()
+            #enter for admin
+            if user_name == "admin":
+                password_field = st.empty()
+                password = password_field.text_input("Enter password")
+                if password == PASSWORD:
                     st.session_state.user_name: str = user_name
-                    plaseholder.success(f'{user_name} Welcome to our system')
+                    plaseholder.success(
+                        f'{user_name} Welcome to our system')
+                    password_field.empty()
                     return user_name
-                else:
-                    st.write(
-                        "your name not in names...\n enter your name like codebord name\n find your name in this list")
-                    st.dataframe(DataLoader.df_names["NAME"])
+            #entner for user 
+            elif user_name in DataLoader.df_names["NAME"].values:
+                st.session_state.user_name: str = user_name
+                plaseholder.success(f'{user_name} Welcome to our system')
+                return user_name
+            #if user not in names list
+            elif user_name:
+                st.write(
+                    "your name not in names...\n enter your name like codebord name\n find your name in this list")
+                st.dataframe(DataLoader.df_names["NAME"])
             st.stop()
         else:
             return st.session_state.user_name
