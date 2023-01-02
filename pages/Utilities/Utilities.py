@@ -58,35 +58,34 @@ class WriteAnswers:
         df = pd.read_csv(self.file_name, skipinitialspace=True, dtype="string")
         df.loc[df["NAME"] == self.name, str(num_answers)] = answer
         df.to_csv(self.file_name, index=False)
-        st.write("good job!")
 
 
 class Questions:
     def execute_question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None,
                          write_answer: WriteAnswers = None, code: str = "", show_output: bool = True,
-                         title: str = None, add_code: str = None, caption=None):
+                         title: str = None, add_code: str = None, caption: str = None):
         # if title is not None
         form_title = title or f"Question {num_questoin}"
         with st.form(form_title):
-            st.write(questoin)
-            code = st_ace(value=code, language="python", auto_update=True)
 
-            # Every form must have a submit button.
+            st.write(questoin)
             if caption:
                 st.caption(caption)
-
-            submitted = st.form_submit_button("Submit")
-            # evaluate the code
             if add_code:
                 code = add_code + code
-            output = subprocess.run(
-                ['python', '-c', code], capture_output=True, text=True).stdout
-            if show_output:
-                st.code(output)
-            if test and not test(output):
-                st.write("try again... code not match")
-            elif submitted and code:
-                write_answer.add_answer(code, num_questoin)
+            code = st_ace(value=code, language="python", auto_update=True)
+
+            # evaluate the code
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                output = subprocess.run(
+                    ['python', '-c', code], capture_output=True, text=True).stdout
+                if show_output:
+                    st.code(output)
+                if test and not test(output):
+                    st.write("try again... code not match")
+                elif submitted and code:
+                    write_answer.add_answer(code, num_questoin)
 
     def question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None, write_answer: WriteAnswers = None, title: str = None):
         with st.form(f"Q {num_questoin}"):
@@ -114,32 +113,33 @@ class Utilities:
 
         Returns:
             str: name of user
-        """        
+        """
         if "user_name" not in st.session_state:
             # create a new placeholder for button and input fields
             plaseholder = st.empty()
-            user_name = plaseholder.text_input(
+            user_name: str = plaseholder.text_input(
                 "Enter your username", autocomplete="name")
-            #enter for admin
+            # enter for admin
             if user_name == "admin":
                 password_field = st.empty()
-                password = password_field.text_input("Enter password")
+                password: str = password_field.text_input("Enter password")
                 if password == PASSWORD:
                     st.session_state.user_name: str = user_name
                     plaseholder.success(
                         f'{user_name} Welcome to our system')
                     password_field.empty()
                     return user_name
-            #entner for user 
+            # entner for user
             elif user_name in DataLoader.df_names["NAME"].values:
                 st.session_state.user_name: str = user_name
                 plaseholder.success(f'{user_name} Welcome to our system')
                 return user_name
-            #if user not in names list
+            # if user not in names list
             elif user_name:
                 st.write(
                     "your name not in names...\n enter your name like codebord name\n find your name in this list")
                 st.dataframe(DataLoader.df_names["NAME"])
+
             st.stop()
         else:
             return st.session_state.user_name
