@@ -1,6 +1,7 @@
 import sys, os
 import streamlit as st
 import pandas as pd
+import numpy as np
 from pages.Utilities.Utilities import WriteAnswers, DataLoader, Questions, Utilities
 df_status = DataLoader.df_status
 df_names = DataLoader.df_names
@@ -13,7 +14,7 @@ write_answers = WriteAnswers(name, utilities_path / "status.csv")
 st.title(f"{name} Welcome to Neta Ex 1")
 df_status = DataLoader.load_df_status()
 st.dataframe(df_status.loc[df_status["NAME"] ==
-                           name], use_container_width=True)
+                           name].replace([np.nan," "],"🤔"), use_container_width=True)
 
 Questions.execute_question(1, '''Printing the numbers 1 through 10: 
      _remember_ `range(x,y)` run from x to y-1''',

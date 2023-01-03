@@ -68,24 +68,23 @@ class Questions:
         form_title = title or f"Question {num_questoin}"
         with st.form(form_title):
 
+            st.subheader(form_title)
             st.write(questoin)
             if caption:
                 st.caption(caption)
             if add_code:
                 code = add_code + code
-            code = st_ace(value=code, language="python", auto_update=True)
+            code = st_ace(value=code, language="python", auto_update=True).replace(code, '')
 
             # evaluate the code
-            submitted = st.form_submit_button("Submit")
-            if submitted:
+            if st.form_submit_button("Submit") and code:
                 output = subprocess.run(
                     ['python', '-c', code], capture_output=True, text=True).stdout
                 if show_output:
                     st.code(output)
                 if test and not test(output):
                     st.write("try again... code not match")
-                elif submitted and code:
-                    write_answer.add_answer(code, num_questoin)
+                write_answer.add_answer(code, num_questoin)
 
     def question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None, write_answer: WriteAnswers = None, title: str = None):
         with st.form(f"Q {num_questoin}"):
