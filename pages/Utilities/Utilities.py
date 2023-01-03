@@ -63,7 +63,7 @@ class WriteAnswers:
 class Questions:
     def execute_question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None,
                          write_answer: WriteAnswers = None, code: str = "", show_output: bool = True,
-                         title: str = None, add_code: str = None, caption: str = None):
+                         title: str = None, add_test_code: str = "", caption: str = None):
         # if title is not None
         form_title = title or f"Question {num_questoin}"
         with st.form(form_title):
@@ -72,19 +72,20 @@ class Questions:
             st.write(questoin)
             if caption:
                 st.caption(caption)
-            if add_code:
-                code = add_code + code
-            code = st_ace(value=code, language="python", auto_update=True).replace(code, '')
+            #teke the code and remove provided code form answer
+            answer = st_ace(value=code, language="python", auto_update=True)
 
             # evaluate the code
-            if st.form_submit_button("Submit") and code:
+            if st.form_submit_button("Submit") and answer.replace(code, ""):
+                if add_test_code: #add code after answer
+                    answer = add_test_code + answer
                 output = subprocess.run(
-                    ['python', '-c', code], capture_output=True, text=True).stdout
+                    ['python', '-c', answer], capture_output=True, text=True).stdout
                 if show_output:
                     st.code(output)
                 if test and not test(output):
                     st.write("try again... code not match")
-                write_answer.add_answer(code, num_questoin)
+                write_answer.add_answer(answer.replace(code,""), num_questoin)
 
     def question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None, write_answer: WriteAnswers = None, title: str = None):
         with st.form(f"Q {num_questoin}"):
