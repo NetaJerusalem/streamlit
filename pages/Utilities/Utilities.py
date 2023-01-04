@@ -1,11 +1,12 @@
 import pandas as pd
 import re
-from typing import List, Tuple, Callable, TextIO, Final
+from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final
 import streamlit as st
 from pathlib import Path
 import subprocess
 from streamlit_ace import st_ace
-PASSWORD = "13245"
+
+PASSWORD:Literal["13245"] = "13245"
 
 
 class DataLoader:
@@ -17,7 +18,7 @@ class DataLoader:
     df_status_ex1 = pd.read_csv(
         utilities_path / "status_ex1.csv", skipinitialspace=True)
     df_status_ex1["NAME"] = df_status_ex1["NAME"].map(str.strip)
-
+    @staticmethod
     def load_df_names() -> pd.DataFrame:
         DataLoader.df_names = pd.read_csv(
             DataLoader.utilities_path / "names.csv", skipinitialspace=True)
@@ -25,6 +26,7 @@ class DataLoader:
             str.strip)
         return DataLoader.df_names
 
+    @staticmethod
     def load_df_status() -> pd.DataFrame:
         DataLoader.df_status_ex1 = pd.read_csv(
             DataLoader.utilities_path / "status_ex1.csv", skipinitialspace=True)
@@ -60,10 +62,13 @@ class WriteAnswers:
         df.to_csv(self.file_name, index=False)
 
 
+
 class Questions:
-    def execute_question(num_questoin: int, questoin: str, test_fn: Callable[[str], bool] = None,
-                         write_answer: WriteAnswers = None, code: str = "", show_output: bool = True,
-                         title: str = None, add_test_code: str = "", caption: str = None):
+
+    @staticmethod
+    def execute_question(num_questoin: int, questoin: str, test_fn: Optional[Callable[[str], bool]] = None,
+                         write_answer: Optional[WriteAnswers] = None, code: str = "", show_output: bool = True,
+                         title: str = "", add_test_code: str = "", caption: str = ""):
         # if title is not None
         form_title = title or f"Question {num_questoin}"
         with st.form(form_title):
@@ -85,9 +90,11 @@ class Questions:
                     st.code(output)
                 if test_fn and not test_fn(output):
                     st.write("try again... code not match")
-                write_answer.add_answer(answer.replace(code, ""), num_questoin)
+                if write_answer:
+                     write_answer.add_answer(answer.replace(code, ""), num_questoin)
 
-    def question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None, write_answer: WriteAnswers = None, title: str = None):
+    @staticmethod
+    def question(num_questoin: int, questoin: str, test: Optional[Callable[[str], bool]] = None, write_answer: Optional[WriteAnswers] = None, title: str = ""):
         with st.form(f"Q {num_questoin}"):
             st.write(questoin)
             answer = st.text_input("Answer")
@@ -98,6 +105,7 @@ class Questions:
             elif submitted and answer:
                 write_answer.add_answer(answer, num_questoin)
 
+    @staticmethod
     def test_code_by_re(pattern: str) -> Callable[[str], bool]:
         def f(code: str) -> bool:
             f_pattern = re.compile(pattern)
@@ -107,6 +115,7 @@ class Questions:
 
 class Utilities:
     """many tools"""
+    @staticmethod
     def enter_name() -> str:
         """avoid load pange until user enter to system 
         and register the name in `st.session_state`
@@ -124,14 +133,14 @@ class Utilities:
                 password_field = st.empty()
                 password: str = password_field.text_input("Enter password")
                 if password == PASSWORD:
-                    st.session_state.user_name: str = user_name
+                    st.session_state.user_name = user_name
                     plaseholder.success(
                         f'{user_name} Welcome to our system')
                     password_field.empty()
                     return user_name
             # entner for user
             elif user_name in DataLoader.df_names["NAME"].values:
-                st.session_state.user_name: str = user_name
+                st.session_state.user_name = user_name
                 plaseholder.success(f'{user_name} Welcome to our system')
                 return user_name
             # if user not in names list
