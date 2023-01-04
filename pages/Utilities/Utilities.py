@@ -14,9 +14,9 @@ class DataLoader:
     df_names = pd.read_csv(utilities_path / "names.csv", skipinitialspace=True)
     df_names["NAME"] = df_names["NAME"].map(str.strip)
 
-    df_status = pd.read_csv(
-        utilities_path / "status.csv", skipinitialspace=True)
-    df_status["NAME"] = df_status["NAME"].map(str.strip)
+    df_status_ex1 = pd.read_csv(
+        utilities_path / "status_ex1.csv", skipinitialspace=True)
+    df_status_ex1["NAME"] = df_status_ex1["NAME"].map(str.strip)
 
     def load_df_names() -> pd.DataFrame:
         DataLoader.df_names = pd.read_csv(
@@ -26,11 +26,11 @@ class DataLoader:
         return DataLoader.df_names
 
     def load_df_status() -> pd.DataFrame:
-        DataLoader.df_status = pd.read_csv(
-            DataLoader.utilities_path / "status.csv", skipinitialspace=True)
-        DataLoader.df_status["NAME"] = DataLoader.df_status["NAME"].map(
+        DataLoader.df_status_ex1 = pd.read_csv(
+            DataLoader.utilities_path / "status_ex1.csv", skipinitialspace=True)
+        DataLoader.df_status_ex1["NAME"] = DataLoader.df_status_ex1["NAME"].map(
             str.strip)
-        return DataLoader.df_status
+        return DataLoader.df_status_ex1
 
 
 class WriteAnswers:
@@ -61,7 +61,7 @@ class WriteAnswers:
 
 
 class Questions:
-    def execute_question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None,
+    def execute_question(num_questoin: int, questoin: str, test_fn: Callable[[str], bool] = None,
                          write_answer: WriteAnswers = None, code: str = "", show_output: bool = True,
                          title: str = None, add_test_code: str = "", caption: str = None):
         # if title is not None
@@ -72,20 +72,20 @@ class Questions:
             st.write(questoin)
             if caption:
                 st.caption(caption)
-            #teke the code and remove provided code form answer
+            # teke the code and remove provided code form answer
             answer = st_ace(value=code, language="python", auto_update=True)
 
             # evaluate the code
             if st.form_submit_button("Submit") and answer.replace(code, ""):
-                if add_test_code: #add code after answer
-                    answer = add_test_code + answer
+                if add_test_code:  # add code after answer
+                    answer = answer + add_test_code
                 output = subprocess.run(
                     ['python', '-c', answer], capture_output=True, text=True).stdout
                 if show_output:
                     st.code(output)
-                if test and not test(output):
+                if test_fn and not test_fn(output):
                     st.write("try again... code not match")
-                write_answer.add_answer(answer.replace(code,""), num_questoin)
+                write_answer.add_answer(answer.replace(code, ""), num_questoin)
 
     def question(num_questoin: int, questoin: str, test: Callable[[str], bool] = None, write_answer: WriteAnswers = None, title: str = None):
         with st.form(f"Q {num_questoin}"):
