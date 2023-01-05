@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 from streamlit_ace import st_ace
 
-PASSWORD:Literal["13245"] = "13245"
+PASSWORD: Literal["13245"] = "13245"
 
 
 class DataLoader:
@@ -18,6 +18,7 @@ class DataLoader:
     df_status_ex1 = pd.read_csv(
         utilities_path / "status_ex1.csv", skipinitialspace=True)
     df_status_ex1["NAME"] = df_status_ex1["NAME"].map(str.strip)
+
     @staticmethod
     def load_df_names() -> pd.DataFrame:
         DataLoader.df_names = pd.read_csv(
@@ -33,6 +34,15 @@ class DataLoader:
         DataLoader.df_status_ex1["NAME"] = DataLoader.df_status_ex1["NAME"].map(
             str.strip)
         return DataLoader.df_status_ex1
+
+    @staticmethod
+    def download_status() -> None:
+        '''
+        create button taht allwed the admin download status
+        '''
+        if Utilities.enter_name() == 'admin':
+            st.download_button('download status',
+                               DataLoader.df_status_ex1.to_csv(), 'status.csv')
 
 
 class WriteAnswers:
@@ -60,7 +70,6 @@ class WriteAnswers:
         df = pd.read_csv(self.file_name, skipinitialspace=True, dtype="string")
         df.loc[df["NAME"] == self.name, str(num_answers)] = answer
         df.to_csv(self.file_name, index=False)
-
 
 
 class Questions:
@@ -91,7 +100,8 @@ class Questions:
                 if test_fn and not test_fn(output):
                     st.write("try again... code not match")
                 if write_answer:
-                     write_answer.add_answer(answer.replace(code, ""), num_questoin)
+                    write_answer.add_answer(
+                        answer.replace(code, ""), num_questoin)
 
     @staticmethod
     def question(num_questoin: int, questoin: str, test: Optional[Callable[[str], bool]] = None, write_answer: Optional[WriteAnswers] = None, title: str = ""):

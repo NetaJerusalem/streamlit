@@ -17,3 +17,4 @@ if Utilities.enter_name() == "admin":
     st.dataframe(DataLoader.df_names)
     if st.button("reload"):
         st.dataframe(DataLoader.load_df_status())
+    DataLoader.download_status()
