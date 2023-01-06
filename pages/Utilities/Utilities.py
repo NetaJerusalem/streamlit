@@ -1,64 +1,87 @@
+import os
 import pandas as pd
+from pandas import DataFrame
 import re
-from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final
+from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final, Type
 import streamlit as st
 from pathlib import Path
 import subprocess
 from streamlit_ace import st_ace
+from collections import namedtuple
 
 PASSWORD: Literal["13245"] = "13245"
+dfLoc = namedtuple("dfLoc", ("row", "column"))
 
 
 class DataLoader:
-    # load data
-    utilities_path = Path(__file__).parents[0]
-    df_names = pd.read_csv(utilities_path / "names.csv", skipinitialspace=True)
-    df_names["NAME"] = df_names["NAME"].map(str.strip)
 
-    df_status_ex1 = pd.read_csv(
-        utilities_path / "status_ex1.csv", skipinitialspace=True)
-    df_status_ex1["NAME"] = df_status_ex1["NAME"].map(str.strip)
+    def __init__(self, name: str, path: Optional[Path] = None) -> None:
+        if path:
+            self.path: Path = path / name
+        else:
+            self.path = Path(__file__).parents[0] / name
+        self.df: DataFrame = pd.read_csv(
+            self.path, skipinitialspace=True, dtype="string")
 
-    @staticmethod
-    def load_df_names() -> pd.DataFrame:
-        DataLoader.df_names = pd.read_csv(
-            DataLoader.utilities_path / "names.csv", skipinitialspace=True)
-        DataLoader.df_names["NAME"] = DataLoader.df_names["NAME"].map(
-            str.strip)
-        return DataLoader.df_names
+    def reload(self) -> DataFrame:
+        self.df = pd.read_csv(self.path)
+        return self.df
 
-    @staticmethod
-    def load_df_status() -> pd.DataFrame:
-        DataLoader.df_status_ex1 = pd.read_csv(
-            DataLoader.utilities_path / "status_ex1.csv", skipinitialspace=True)
-        DataLoader.df_status_ex1["NAME"] = DataLoader.df_status_ex1["NAME"].map(
-            str.strip)
-        return DataLoader.df_status_ex1
+    def write(self, data: str | int | float, loc: dfLoc | Tuple[str, str]) -> DataFrame:
+        if type(loc) != dfLoc:
+            loc = dfLoc(loc[0], loc[1])
+        # type: ignore
+        self.df.at[loc.row, loc.column] = data
+        self.df.to_csv(self.path, index=False)
+        return self.reload()
 
-    @staticmethod
-    def download_status() -> None:
+    def write_by_name(self, data: str | int | float, loc: dfLoc | Tuple[str, str]) -> DataFrame:
+        if type(loc) != dfLoc:
+            loc = dfLoc(loc[0], loc[1])
+        # type: ignore
+        self.df.loc[self.df["NAME"] == loc.row, loc.column] = data
+        self.df.to_csv(self.path, index=False)
+        return self.reload()
+
+    def show_df(self, fancy: Literal['wide'] | None = None) -> None:
+        '''
+        show the dataFrame in stteamlit
+
+        Args:
+            fancy (Literal['wide'] | None, optional): which way show the data. Defaults to None.
+        '''
+        if fancy == 'wide':
+            st.dataframe(self.df.style.set_table_styles(
+                dict(selector="th", props=[("max-width", "70px")])), use_container_width=True)
+        else:
+            st.dataframe(self.df)
+
+    @st.cache
+    def add_name(self, name: str) -> DataFrame:
+        if name not in self.reload()["NAME"].values:
+            self.df = pd.concat(
+                [self.df, pd.DataFrame([{"NAME": name}])])
+            self.df.to_csv(self.path, index=False)
+        return self.reload()
+
+    def download(self) -> None:
         '''
         create button taht allwed the admin download status
         '''
-        if Utilities.enter_name() == 'admin':
-            st.download_button('download status',
-                               DataLoader.df_status_ex1.to_csv(), 'status.csv')
+        file_name = os.path.basename(self.path)
+        if st.session_state.user_name == 'admin':
+            st.download_button(f'download {file_name}',
+                        self.df.to_csv(),file_name )
 
 
 class WriteAnswers:
     """
     Write the answer to csv file
     """
-
-    def __init__(self, name: str, file_name: Path) -> None:
-        assert name in DataLoader.df_names["NAME"].values or name == "admin", "Name must be in names"
-        self.name = name
-        self.file_name = file_name
-        df_status = pd.read_csv(self.file_name, skipinitialspace=True)
-        if self.name not in df_status["NAME"].values:
-            df_status = pd.concat(
-                [df_status, pd.DataFrame([{"NAME": self.name}])])
-            df_status.to_csv(self.file_name, index=False)
+    def __init__(self, name: str, file: DataLoader) -> None:
+        self.name: str = name
+        self.file: DataLoader = file
+        self.file.add_name(name)
 
     def add_answer(self,  answer: str, num_answers: int) -> None:
         """
@@ -67,9 +90,7 @@ class WriteAnswers:
         answer:str - data to write to csv file
         num_answers:int - number of question to write
         """
-        df = pd.read_csv(self.file_name, skipinitialspace=True, dtype="string")
-        df.loc[df["NAME"] == self.name, str(num_answers)] = answer
-        df.to_csv(self.file_name, index=False)
+        self.file.write_by_name(answer, dfLoc(self.name, str(num_answers)))
 
 
 class Questions:
@@ -125,8 +146,9 @@ class Questions:
 
 class Utilities:
     """many tools"""
+    utilities_path = Path(__file__).parents[0]
     @staticmethod
-    def enter_name() -> str:
+    def enter_name(names:DataLoader) -> str:
         """avoid load pange until user enter to system 
         and register the name in `st.session_state`
 
@@ -149,7 +171,7 @@ class Utilities:
                     password_field.empty()
                     return user_name
             # entner for user
-            elif user_name in DataLoader.df_names["NAME"].values:
+            elif user_name in names.df["NAME"].values:
                 st.session_state.user_name = user_name
                 plaseholder.success(f'{user_name} Welcome to our system')
                 return user_name
@@ -157,7 +179,7 @@ class Utilities:
             elif user_name:
                 st.write(
                     "your name not in names...\n enter your name like codebord name\n find your name in this list")
-                st.dataframe(DataLoader.df_names["NAME"])
+                st.dataframe(names.df["NAME"])
 
             st.stop()
         else:

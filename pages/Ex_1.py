@@ -3,18 +3,15 @@ import os
 import streamlit as st
 import pandas as pd
 import numpy as np
-from pages.Utilities.Utilities import WriteAnswers, DataLoader, Questions, Utilities
-df_status = DataLoader.df_status_ex1
-df_names = DataLoader.df_names
-utilities_path = DataLoader.utilities_path
+from pages.Utilities.Utilities import WriteAnswers, Questions, Utilities, DataLoader
+names_df: DataLoader = DataLoader("names.csv")
+status_df: DataLoader = DataLoader("status_ex1.csv")
 
-
-st.set_page_config(page_title="Ex1", page_icon="📈")
-name = Utilities.enter_name()
-write_answers = WriteAnswers(name, utilities_path / "status_ex1.csv")
-st.title(f"{name} Welcome to Neta Ex 1")
-df_status = DataLoader.load_df_status()
-st.dataframe(df_status.loc[df_status["NAME"] ==
+st.set_page_config(page_title="Ex1", page_icon="🔢")
+name = Utilities.enter_name(names_df)
+write_answers: WriteAnswers = WriteAnswers(name,status_df )
+st.title(f"{name} Welcome to Multiplication table Ex")
+st.dataframe(status_df.df.loc[status_df.df["NAME"] ==
                            name].replace([np.nan, " "], "🤔"), use_container_width=True)
 
 Questions.execute_question(1, "Printing the elements of a list of strings:",
