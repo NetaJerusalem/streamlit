@@ -12,7 +12,7 @@ print(lst)
 my_list = [[],[1,1,1],["a","b","c"]]
 num = my_list[1][1]
 
-print(lst)
+print(num)
 #4
 my_list = [[],[1,1,1],["a","b","c"]]
 lst = my_list[2]

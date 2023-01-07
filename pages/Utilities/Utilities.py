@@ -5,7 +5,7 @@ from pandas import DataFrame
 import re
 from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final, Type, Union
 import streamlit as st
-from streamlit import session_state
+from streamlit import session_state as ses
 from pathlib import Path
 import subprocess
 from streamlit_ace import st_ace
@@ -72,7 +72,7 @@ class DataLoader:
         create button taht allwed the admin download status
         '''
         file_name = os.path.basename(self.path)
-        if st.session_state.user_name == 'admin':
+        if ses.user_name == 'admin':
             st.download_button(f'download {file_name}',
                                self.df.to_csv(), file_name)
 
@@ -148,16 +148,18 @@ class Questions:
         return f
 
     @staticmethod
-    def quick_questions(name: str,key:Optional[str]=None,reload:bool=False) -> None:
-        if "codes" not in session_state.keys() or reload:
-            pattern = re.compile(r'#[1-9](.|\n[^#])*')
+    def quick_questions(name: str, key: Optional[str] = None, reload: bool = False) -> None:
+        if "codes" not in ses.keys() or reload: #codes is the flag if we initialize the session
+            pattern_load = re.compile(r'#[1-9](.|\n[^#])*')
             path: Path = Path(__file__).parents[0] / name
-            with open(path) as f:
-                iter_codes = pattern.finditer(f.read())
-                session_state.codes = list(text.group() for text in iter_codes)
-                session_state.bar = 0
-                session_state.successes_counter = ""
-        
+            with open(path) as f: #load all questions form file
+                iter_codes = pattern_load.finditer(f.read())
+                ses.codes = list(text.group() for text in iter_codes)
+            ses.bar = 0
+            ses.successes_counter = ""
+            ses.pattern = re.compile(r'\s+|\"|\'')
+            ses.successes_f = False
+
         code_place = st.empty()
         input_place = st.empty()
         bar_place = st.empty()
@@ -165,29 +167,29 @@ class Questions:
         successes = st.empty()
         sabmit = button.button("submit")
         answer = input_place.text_input("enter results")
-        bar_place.progress(session_state.bar)
-        
-        while len(session_state.codes) > 1:
-            if session_state.bar == 100:
-                session_state.codes.pop(0)
-                session_state.bar = 0
-            code: str = session_state.codes[0]
+        bar_place.progress(ses.bar)
+
+        #main loop, 
+        while len(ses.codes) > 1:
+            if ses.bar == 100: # bar is 100 when answer is correct or timeout
+                ses.successes_counter += " 😎" if ses.successes_f else " 😢"
+                ses.codes.pop(0)
+                ses.bar = 0
+                ses.successes_f = False
+            successes.write(f"#{ses.successes_counter}")
+            code: str = ses.codes[0]
             code_place.code(code, language="python")
-            output = subprocess.run(
+            output: str = subprocess.run(
                 ['python', '-c', code], capture_output=True, text=True).stdout
             if sabmit and answer:
-                st.text(answer+" "+output)
-                st.write(answer.replace(" ", "").replace("   ", "") ==
-                         output.replace(" ", "").replace("   ", "").replace('"', '').replace("'", ""))
-                st.write(type(answer), type(output))
-                session_state.successes_counter += " 😎"
-                successes.write(f"#{session_state.successes_counter}")
-                session_state.bar = 100
+                if ses.pattern.sub("", output.casefold()) == ses.pattern.sub("", answer.casefold()):
+                    ses.successes_f = True
+                    ses.bar = 100
                 sabmit = False
-            while session_state.bar < 100:
+            while ses.bar < 100:
                 time.sleep(0.25)
-                session_state.bar += 1
-                bar_place.progress(session_state.bar)
+                ses.bar += 1
+                bar_place.progress(ses.bar)
 
 
 class Utilities:
@@ -202,7 +204,7 @@ class Utilities:
         Returns:
             str: name of user
         """
-        if "user_name" not in st.session_state:
+        if "user_name" not in ses.keys():
             # create a new placeholder for button and input fields
             plaseholder = st.empty()
             user_name: str = plaseholder.text_input(
@@ -212,14 +214,14 @@ class Utilities:
                 password_field = st.empty()
                 password: str = password_field.text_input("Enter password")
                 if password == PASSWORD:
-                    st.session_state.user_name = user_name
+                    ses.user_name = user_name
                     plaseholder.success(
                         f'{user_name} Welcome to our system')
                     password_field.empty()
                     return user_name
             # entner for user
             elif user_name in names.df["NAME"].values:
-                st.session_state.user_name = user_name
+                ses.user_name = user_name
                 plaseholder.success(f'{user_name} Welcome to our system')
                 return user_name
             # if user not in names list
@@ -230,4 +232,4 @@ class Utilities:
 
             st.stop()
         else:
-            return st.session_state.user_name
+            return ses.user_name
