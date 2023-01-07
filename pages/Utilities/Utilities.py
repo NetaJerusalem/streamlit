@@ -1,13 +1,16 @@
 import os
+import random
 import pandas as pd
 from pandas import DataFrame
 import re
 from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final, Type
 import streamlit as st
+from streamlit import session_state
 from pathlib import Path
 import subprocess
 from streamlit_ace import st_ace
 from collections import namedtuple
+import time
 
 PASSWORD: Literal["13245"] = "13245"
 dfLoc = namedtuple("dfLoc", ("row", "column"))
@@ -71,13 +74,14 @@ class DataLoader:
         file_name = os.path.basename(self.path)
         if st.session_state.user_name == 'admin':
             st.download_button(f'download {file_name}',
-                        self.df.to_csv(),file_name )
+                               self.df.to_csv(), file_name)
 
 
 class WriteAnswers:
     """
     Write the answer to csv file
     """
+
     def __init__(self, name: str, file: DataLoader) -> None:
         self.name: str = name
         self.file: DataLoader = file
@@ -143,13 +147,55 @@ class Questions:
             return bool(f_pattern.match(code))
         return f
 
+    @staticmethod
+    def quick_questions(questions_path: Path) -> None:
+        if "codes" not in session_state.keys():
+            pattern = re.compile(r'#[1-9](.|\n[^#])*')
+            with open(questions_path) as f:
+                iter_codes = pattern.finditer(f.read())
+                session_state.codes = list(text.group() for text in iter_codes)
+        if "bar" not in session_state.keys():
+            session_state.bar = 0
+        code_place = st.empty()
+        input_place = st.empty()
+        bar_place = st.empty()
+        button = st.empty()
+        successes = st.empty()
+        sabmit = button.button("submit")
+        if "successes_counter" not in session_state.keys():
+            session_state.successes_counter = ""
+        answer = input_place.text_input("enter results")
+        bar_place.progress(session_state.bar)
+        while len(session_state.codes) > 1:
+            if session_state.bar == 100:
+                session_state.codes.pop(0)
+                session_state.bar = 0
+            code: str = session_state.codes[0]
+            code_place.code(code, language="python")
+            output = subprocess.run(
+                ['python', '-c', code], capture_output=True, text=True).stdout
+            if sabmit and answer:
+                st.text(answer+" "+output)
+                st.write(answer.replace(" ", "").replace("   ", "") ==
+                         output.replace(" ", "").replace("   ", "").replace('"','').replace("'",""))
+                st.write(type(answer),type(output))
+                session_state.successes_counter += " 😎"
+                successes.write(f"#{session_state.successes_counter}")
+                session_state.bar = 100
+                sabmit = False
+            while session_state.bar < 100:
+                time.sleep(0.25)
+                session_state.bar += 1
+                bar_place.progress(session_state.bar)
+
 
 class Utilities:
     """many tools"""
     utilities_path = Path(__file__).parents[0]
+
     @staticmethod
-    def enter_name(names:DataLoader) -> str:
-        """avoid load pange until user enter to system 
+    def enter_name(names: DataLoader) -> str:
+        """avoid load pange until user enter to system
         and register the name in `st.session_state`
 
         Returns:
@@ -184,3 +230,21 @@ class Utilities:
             st.stop()
         else:
             return st.session_state.user_name
+
+        # while len(self.codes)>0:
+        #     if st.session_state.bar < 100:
+        #         self.codes.pop(0)
+        #     code = self.codes[0]
+        #     code_place.empty()
+        #     input_place.empty()
+        #     code_place.code(code,language="python")
+        #     currunt_answer = subprocess.run(
+        #         ['python', '-c', code], capture_output=True, text=True).stdout
+        #     answer = input_place.text_input("enter answer",key=hash(code))
+        #     st.write(answer,currunt_answer,hash(code))
+        #     bar = bar_place.progress(0)
+        #     while st.session_state.bar<=100:
+        #         time.sleep(0.1)
+        #         bar.progress(st.session_state.bar + 1)
+        #         if answer and answer == currunt_answer:
+        #             break
