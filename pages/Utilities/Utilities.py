@@ -148,24 +148,25 @@ class Questions:
         return f
 
     @staticmethod
-    def quick_questions(questions_path: Path) -> None:
-        if "codes" not in session_state.keys():
+    def quick_questions(name: str,key:Optional[str]=None,reload:bool=False) -> None:
+        if "codes" not in session_state.keys() or reload:
             pattern = re.compile(r'#[1-9](.|\n[^#])*')
-            with open(questions_path) as f:
+            path: Path = Path(__file__).parents[0] / name
+            with open(path) as f:
                 iter_codes = pattern.finditer(f.read())
                 session_state.codes = list(text.group() for text in iter_codes)
-        if "bar" not in session_state.keys():
-            session_state.bar = 0
+                session_state.bar = 0
+                session_state.successes_counter = ""
+        
         code_place = st.empty()
         input_place = st.empty()
         bar_place = st.empty()
         button = st.empty()
         successes = st.empty()
         sabmit = button.button("submit")
-        if "successes_counter" not in session_state.keys():
-            session_state.successes_counter = ""
         answer = input_place.text_input("enter results")
         bar_place.progress(session_state.bar)
+        
         while len(session_state.codes) > 1:
             if session_state.bar == 100:
                 session_state.codes.pop(0)
