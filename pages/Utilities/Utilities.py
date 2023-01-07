@@ -186,7 +186,7 @@ class Questions:
         successes = st.empty()
         # sabmit = button.button("submit")
         answer = input_place.text_input(
-            "enter results", key=f'Q{len(ses.codes)}')
+            "enter results")
         bar_place.progress(ses.bar)
 
         # main loop,
