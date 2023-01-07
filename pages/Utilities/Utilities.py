@@ -230,21 +230,3 @@ class Utilities:
             st.stop()
         else:
             return st.session_state.user_name
-
-        # while len(self.codes)>0:
-        #     if st.session_state.bar < 100:
-        #         self.codes.pop(0)
-        #     code = self.codes[0]
-        #     code_place.empty()
-        #     input_place.empty()
-        #     code_place.code(code,language="python")
-        #     currunt_answer = subprocess.run(
-        #         ['python', '-c', code], capture_output=True, text=True).stdout
-        #     answer = input_place.text_input("enter answer",key=hash(code))
-        #     st.write(answer,currunt_answer,hash(code))
-        #     bar = bar_place.progress(0)
-        #     while st.session_state.bar<=100:
-        #         time.sleep(0.1)
-        #         bar.progress(st.session_state.bar + 1)
-        #         if answer and answer == currunt_answer:
-        #             break
