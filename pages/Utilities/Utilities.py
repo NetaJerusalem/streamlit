@@ -16,6 +16,25 @@ PASSWORD: Literal["13245"] = "13245"
 dfLoc = namedtuple("dfLoc", ("row", "column"))
 
 
+def _random_eomji(emojis: set[str]) -> Callable[[], str]:
+    '''
+    return function that randomly returns emoji
+
+    Args:
+        emojis (set[str]): list of emojis
+
+    Returns:
+        Callable[[None],str]: fuction that return random emoji with spaces!!
+    '''
+    def f():
+        return " " + random.choice(list(emojis))
+    return f
+
+
+sad_eomji = _random_eomji({"😵‍💫", "😶‍🌫️", "😢", "😭", "😰", "😩"})
+happy_eomji = _random_eomji({"😀", "😁", "😆", "😘", "😍", "🥰", "🙂", "😚"})
+
+
 class DataLoader:
 
     def __init__(self, name: str, path: Optional[Path] = None) -> None:
@@ -149,10 +168,10 @@ class Questions:
 
     @staticmethod
     def quick_questions(name: str, key: Optional[str] = None, reload: bool = False) -> None:
-        if "codes" not in ses.keys() or reload: #codes is the flag if we initialize the session
+        if "codes" not in ses.keys() or reload:  # codes is the flag if we initialize the session
             pattern_load = re.compile(r'#[1-9](.|\n[^#])*')
             path: Path = Path(__file__).parents[0] / name
-            with open(path) as f: #load all questions form file
+            with open(path) as f:  # load all questions form file
                 iter_codes = pattern_load.finditer(f.read())
                 ses.codes = list(text.group() for text in iter_codes)
             ses.bar = 0
@@ -165,14 +184,15 @@ class Questions:
         bar_place = st.empty()
         button = st.empty()
         successes = st.empty()
-        sabmit = button.button("submit")
-        answer = input_place.text_input("enter results")
+        # sabmit = button.button("submit")
+        answer = input_place.text_input(
+            "enter results", key=f'Q{len(ses.codes)}')
         bar_place.progress(ses.bar)
 
-        #main loop, 
+        # main loop,
         while len(ses.codes) > 1:
-            if ses.bar == 100: # bar is 100 when answer is correct or timeout
-                ses.successes_counter += " 😎" if ses.successes_f else " 😢"
+            if ses.bar == 100:  # bar is 100 when answer is correct or timeout
+                ses.successes_counter += happy_eomji() if ses.successes_f else sad_eomji()
                 ses.codes.pop(0)
                 ses.bar = 0
                 ses.successes_f = False
@@ -181,15 +201,16 @@ class Questions:
             code_place.code(code, language="python")
             output: str = subprocess.run(
                 ['python', '-c', code], capture_output=True, text=True).stdout
-            if sabmit and answer:
+            if answer:
                 if ses.pattern.sub("", output.casefold()) == ses.pattern.sub("", answer.casefold()):
                     ses.successes_f = True
                     ses.bar = 100
-                sabmit = False
+                # sabmit = False
             while ses.bar < 100:
                 time.sleep(0.25)
                 ses.bar += 1
                 bar_place.progress(ses.bar)
+        successes.write(f"#{ses.successes_counter}")
 
 
 class Utilities:
