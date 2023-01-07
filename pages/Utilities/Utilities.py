@@ -3,7 +3,7 @@ import random
 import pandas as pd
 from pandas import DataFrame
 import re
-from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final, Type
+from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final, Type, Union
 import streamlit as st
 from streamlit import session_state
 from pathlib import Path
@@ -30,7 +30,7 @@ class DataLoader:
         self.df = pd.read_csv(self.path)
         return self.df
 
-    def write(self, data: str | int | float, loc: dfLoc | Tuple[str, str]) -> DataFrame:
+    def write(self, data: Union[int, float, str], loc: Union[dfLoc, Tuple[str, str]]) -> DataFrame:
         if type(loc) != dfLoc:
             loc = dfLoc(loc[0], loc[1])
         # type: ignore
@@ -38,7 +38,7 @@ class DataLoader:
         self.df.to_csv(self.path, index=False)
         return self.reload()
 
-    def write_by_name(self, data: str | int | float, loc: dfLoc | Tuple[str, str]) -> DataFrame:
+    def write_by_name(self, data: Union[int, float, str], loc: Union[dfLoc, Tuple[str, str]]) -> DataFrame:
         if type(loc) != dfLoc:
             loc = dfLoc(loc[0], loc[1])
         # type: ignore
@@ -46,7 +46,7 @@ class DataLoader:
         self.df.to_csv(self.path, index=False)
         return self.reload()
 
-    def show_df(self, fancy: Literal['wide'] | None = None) -> None:
+    def show_df(self, fancy: Optional[Literal['wide']] = None) -> None:
         '''
         show the dataFrame in stteamlit
 
@@ -177,8 +177,8 @@ class Questions:
             if sabmit and answer:
                 st.text(answer+" "+output)
                 st.write(answer.replace(" ", "").replace("   ", "") ==
-                         output.replace(" ", "").replace("   ", "").replace('"','').replace("'",""))
-                st.write(type(answer),type(output))
+                         output.replace(" ", "").replace("   ", "").replace('"', '').replace("'", ""))
+                st.write(type(answer), type(output))
                 session_state.successes_counter += " 😎"
                 successes.write(f"#{session_state.successes_counter}")
                 session_state.bar = 100
