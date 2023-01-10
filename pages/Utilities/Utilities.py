@@ -3,7 +3,7 @@ import random
 import pandas as pd
 from pandas import DataFrame
 import re
-from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final, Type, Union
+from typing import List, Literal, Optional, Tuple, Callable, TextIO, Final, Type, Union, Iterator
 import streamlit as st
 from streamlit import session_state as ses
 from pathlib import Path
@@ -180,26 +180,38 @@ class Questions:
             seconds (int, optional): The amount of time for each question. Defaults to 40.
             show_answers (bool, optional): When set to True, displays the current answer, useful for testing. Defaults to False.
         '''
-        #init session_stete (ses) variables
-        if "codes" not in ses.keys() or reload: 
+        # init session_stete (ses) variables
+        def __init_session_stete():
             pattern_load = re.compile(r'#[1-9](.|\n[^#])*')
             path: Path = Path(__file__).parents[0] / name
-            with open(path) as f:  # load all questions form file
-                iter_codes = pattern_load.finditer(f.read())
-                ses.codes = list(text.group() for text in iter_codes)
+            ses.codes = []
             ses.bar = 0
             ses.successes_counter = ""
-            ses.sub_patter = re.compile(r'\s+|\"|\'')
+            ses.sub_pattern = re.compile(r'\s+|\"|\'')
             ses.successes_f = False
-        #init placeholder for components
-        code_place = st.empty()
-        input_place = st.empty()
-        bar_place = st.empty()
-        successes = st.empty()
-        answer = input_place.text_input(
-            "enter results")
-        sleep_time: float = seconds/100
-        bar_place.progress(ses.bar)
+            ses.sleep_time = seconds/100
+            with open(path) as f:  # load all questions form file
+                iter_codes: Iterator[re.Match[str]
+                                     ] = pattern_load.finditer(f.read())
+                for match_code in iter_codes:
+                    _code: str = match_code.group()
+                    compile: subprocess.CompletedProcess[str] = subprocess.run(
+                        ['python', '-c', _code], capture_output=True, text=True)
+                    if not compile.stdout or compile.returncode:
+                        raise RuntimeError(
+                            "Execute code filed, code:{}".format(_code))
+                    _outpot: str = ses.sub_pattern.sub(
+                        "", compile.stdout.casefold())
+                    ses.codes.append((_code, _outpot))
+
+        if "codes" not in ses or reload:
+            __init_session_stete()
+        # init placeholder for components
+        q = st.container()
+        code_place = q.empty()
+        input_place = q.empty()
+        bar_place = q.empty().progress(ses.bar)
+        successes = q.empty()
 
         # main loop, run until finished all code snippets
         while len(ses.codes) > 1:
@@ -208,26 +220,30 @@ class Questions:
                 ses.codes.pop(0)
                 ses.bar = 0
                 ses.successes_f = False
-            #write the amout of successes
-            successes.write(f"#{ses.successes_counter}")
-            code: str = ses.codes[0]
+                input_place.empty()
+
+            # write the amout of successes
+            successes.write(f"# {ses.successes_counter}")
+            answer = input_place.text_input(
+                "What the output of this code?", key=f"Q{str(8-len(ses.codes))}")
+            code, output = ses.codes[0]
             code_place.code(code, language="python")
-            #eveluat the code snippete
-            output: str = subprocess.run(
-                ['python', '-c', code], capture_output=True, text=True).stdout
-            if show_answers: #for testing show the current answer
-                st.write(f"the current answer is `{output}`")
-            if answer: 
-                #eveluat the answer without spaces quotes or newlines
-                if ses.sub_pattern.sub("", output.casefold()) == ses.sub_pattern.sub("", answer.casefold()):
+
+            if show_answers:  # for testing show the current answer
+                successes.write(f"the current answer is `{output}`")
+            if answer:
+                # eveluat the answer without spaces quotes or newlines
+                if output == ses.sub_pattern.sub("", answer.casefold()):
                     ses.successes_f = True
                     ses.bar = 100
-            
+
             while ses.bar < 100:
-                time.sleep(sleep_time)
+                time.sleep(ses.sleep_time)
                 ses.bar += 1
                 bar_place.progress(ses.bar)
-        successes.write(f"#{ses.successes_counter}")
+        
+        successes.write(f"# {ses.successes_counter}")
+        bar_place.empty()
 
 
 class Utilities:
