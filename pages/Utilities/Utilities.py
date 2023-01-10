@@ -24,7 +24,7 @@ def _random_eomji(emojis: set[str]) -> Callable[[], str]:
         emojis (set[str]): list of emojis
 
     Returns:
-        Callable[[None],str]: fuction that return random emoji with spaces!!
+        Callable[[None],str]: function that returns random emoji with spaces!!
     '''
     def f():
         return " " + random.choice(list(emojis))
@@ -88,7 +88,7 @@ class DataLoader:
 
     def download(self) -> None:
         '''
-        create button taht allwed the admin download status
+        create a button that allowed the admin to download status
         '''
         file_name = os.path.basename(self.path)
         if ses.user_name == 'admin':
@@ -98,7 +98,7 @@ class DataLoader:
 
 class WriteAnswers:
     """
-    Write the answer to csv file
+    Write the answer to CSV file
     """
 
     def __init__(self, name: str, file: DataLoader) -> None:
@@ -108,10 +108,10 @@ class WriteAnswers:
 
     def add_answer(self,  answer: str, num_answers: int) -> None:
         """
-        write answer to  csv file,
+        write answers to CSV file
         Arg:
-        answer:str - data to write to csv file
-        num_answers:int - number of question to write
+        answer: str - data to write to CSV file
+        num_answers: int - number of questions to write
         """
         self.file.write_by_name(answer, dfLoc(self.name, str(num_answers)))
 
@@ -122,7 +122,7 @@ class Questions:
     def execute_question(num_questoin: int, questoin: str, test_fn: Optional[Callable[[str], bool]] = None,
                          write_answer: Optional[WriteAnswers] = None, code: str = "", show_output: bool = True,
                          title: str = "", add_test_code: str = "", caption: str = ""):
-        # if title is not None
+        # if the title is None
         form_title = title or f"Question {num_questoin}"
         with st.form(form_title):
 
@@ -130,7 +130,7 @@ class Questions:
             st.write(questoin)
             if caption:
                 st.caption(caption)
-            # teke the code and remove provided code form answer
+            # take the code and remove provided code from the answer
             answer = st_ace(value=code, language="python", auto_update=True)
 
             # evaluate the code
@@ -148,9 +148,9 @@ class Questions:
                         answer.replace(code, ""), num_questoin)
 
     @staticmethod
-    def question(num_questoin: int, questoin: str, test: Optional[Callable[[str], bool]] = None, write_answer: Optional[WriteAnswers] = None, title: str = ""):
+    def question(num_questoin: int, question: str, test: Optional[Callable[[str], bool]] = None, write_answer: Optional[WriteAnswers] = None, title: str = ""):
         with st.form(f"Q {num_questoin}"):
-            st.write(questoin)
+            st.write(question)
             answer = st.text_input("Answer")
             # Every form must have a submit button.
             submitted = st.form_submit_button("Submit")
@@ -167,8 +167,21 @@ class Questions:
         return f
 
     @staticmethod
-    def quick_questions(name: str, key: Optional[str] = None, reload: bool = False) -> None:
-        if "codes" not in ses.keys() or reload:  # codes is the flag if we initialize the session
+    def quick_questions(name: str, key: Optional[str] = None, reload: bool = False, seconds: int = 40, show_answers: bool = False) -> None:
+        '''
+        This function creates a "quick questions" form for a code file in a specific format, as specified in the README file. 
+        The function compares the user's input (answer) to the true output of the code snippet, 
+        ignoring spaces, line breaks, quotation marks, doubles or singles. 
+
+        Args:
+            name (str): The name of the file from which the code snippet is uploaded. The file must conform to the format specified in the README file.
+            key (Optional[str], optional): When creating multiple quick questions, this argument specifies a unique key for each question.
+            reload (bool, optional): When set to True, deletes all progress and starts the game from the beginning. Defaults to False.
+            seconds (int, optional): The amount of time for each question. Defaults to 40.
+            show_answers (bool, optional): When set to True, displays the current answer, useful for testing. Defaults to False.
+        '''
+        #init session_stete (ses) variables
+        if "codes" not in ses.keys() or reload: 
             pattern_load = re.compile(r'#[1-9](.|\n[^#])*')
             path: Path = Path(__file__).parents[0] / name
             with open(path) as f:  # load all questions form file
@@ -176,38 +189,42 @@ class Questions:
                 ses.codes = list(text.group() for text in iter_codes)
             ses.bar = 0
             ses.successes_counter = ""
-            ses.pattern = re.compile(r'\s+|\"|\'')
+            ses.sub_patter = re.compile(r'\s+|\"|\'')
             ses.successes_f = False
-
+        #init placeholder for components
         code_place = st.empty()
         input_place = st.empty()
         bar_place = st.empty()
-        button = st.empty()
         successes = st.empty()
-        # sabmit = button.button("submit")
         answer = input_place.text_input(
             "enter results")
+        sleep_time: float = seconds/100
         bar_place.progress(ses.bar)
 
-        # main loop,
+        # main loop, run until finished all code snippets
         while len(ses.codes) > 1:
             if ses.bar == 100:  # bar is 100 when answer is correct or timeout
                 ses.successes_counter += happy_eomji() if ses.successes_f else sad_eomji()
                 ses.codes.pop(0)
                 ses.bar = 0
                 ses.successes_f = False
+            #write the amout of successes
             successes.write(f"#{ses.successes_counter}")
             code: str = ses.codes[0]
             code_place.code(code, language="python")
+            #eveluat the code snippete
             output: str = subprocess.run(
                 ['python', '-c', code], capture_output=True, text=True).stdout
-            if answer:
-                if ses.pattern.sub("", output.casefold()) == ses.pattern.sub("", answer.casefold()):
+            if show_answers: #for testing show the current answer
+                st.write(f"the current answer is `{output}`")
+            if answer: 
+                #eveluat the answer without spaces quotes or newlines
+                if ses.sub_pattern.sub("", output.casefold()) == ses.sub_pattern.sub("", answer.casefold()):
                     ses.successes_f = True
                     ses.bar = 100
-                # sabmit = False
+            
             while ses.bar < 100:
-                time.sleep(0.25)
+                time.sleep(sleep_time)
                 ses.bar += 1
                 bar_place.progress(ses.bar)
         successes.write(f"#{ses.successes_counter}")
@@ -219,11 +236,11 @@ class Utilities:
 
     @staticmethod
     def enter_name(names: DataLoader) -> str:
-        """avoid load pange until user enter to system
+        """avoid load page until the user enters to system
         and register the name in `st.session_state`
 
         Returns:
-            str: name of user
+            str: name of the user
         """
         if "user_name" not in ses.keys():
             # create a new placeholder for button and input fields
@@ -245,7 +262,7 @@ class Utilities:
                 ses.user_name = user_name
                 plaseholder.success(f'{user_name} Welcome to our system')
                 return user_name
-            # if user not in names list
+            # if the user is not in the names list
             elif user_name:
                 st.write(
                     "your name not in names...\n enter your name like codebord name\n find your name in this list")
