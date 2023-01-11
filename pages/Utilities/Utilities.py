@@ -14,6 +14,8 @@ import time
 
 PASSWORD: Literal["13245"] = "13245"
 dfLoc = namedtuple("dfLoc", ("row", "column"))
+SAD_EOMJI: set[str] = {"😵‍💫", "😶‍🌫️", "😢", "😭", "😰", "😩"}
+HAPPY_EMOJI: set[str] = {"😀", "😁", "😆", "😘", "😍", "🥰", "🙂", "😚"}
 
 
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:
@@ -31,8 +33,8 @@ def _random_eomji(emojis: set[str]) -> Callable[[], str]:
     return f
 
 
-sad_eomji = _random_eomji({"😵‍💫", "😶‍🌫️", "😢", "😭", "😰", "😩"})
-happy_eomji = _random_eomji({"😀", "😁", "😆", "😘", "😍", "🥰", "🙂", "😚"})
+sad_eomji = _random_eomji(SAD_EOMJI)
+happy_eomji = _random_eomji(HAPPY_EMOJI)
 
 
 class DataLoader:
@@ -167,7 +169,7 @@ class Questions:
         return f
 
     @staticmethod
-    def quick_questions(name: str, key: Optional[str] = None, reload: bool = False, seconds: int = 40, show_answers: bool = False) -> None:
+    def quick_questions(name: str, key: Optional[str] = None, reload: bool = False, seconds: int = 40, write_answer: Optional[WriteAnswers] = None, show_answers: bool = False) -> None:
         '''
         This function creates a "quick questions" form for a code file in a specific format, as specified in the README file. 
         The function compares the user's input (answer) to the true output of the code snippet, 
@@ -190,11 +192,13 @@ class Questions:
             ses.sub_pattern = re.compile(r'\s+|\"|\'')
             ses.successes_f = False
             ses.sleep_time = seconds/100
+            ses.start_time = time.time()
             with open(path) as f:  # load all questions form file
                 iter_codes: Iterator[re.Match[str]
                                      ] = pattern_load.finditer(f.read())
                 for match_code in iter_codes:
                     _code: str = match_code.group()
+                    # run code and check if it print something
                     compile: subprocess.CompletedProcess[str] = subprocess.run(
                         ['python', '-c', _code], capture_output=True, text=True)
                     if not compile.stdout or compile.returncode:
@@ -241,9 +245,16 @@ class Questions:
                 time.sleep(ses.sleep_time)
                 ses.bar += 1
                 bar_place.progress(ses.bar)
-        
-        successes.write(f"# {ses.successes_counter}")
-        bar_place.empty()
+        finish_time: int = int(time.time() - ses.start_time)
+        count_successes: int = len(re.findall('[😀😁😆😘😍🥰🙂😚]', ses.successes_counter))
+
+        successes.write(
+            f'## You answered {count_successes} correct answers in the time of: {finish_time} seconds')
+        if write_answer:
+            count_successes = len(re.findall(
+                '[😀😁😆😘😍🥰🙂😚]', ses.successes_counter))
+            write_answer.add_answer(
+                f'correct answers:{count_successes}, time: {finish_time}', 1)
 
 
 class Utilities:
