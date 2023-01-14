@@ -4,4 +4,4 @@ from pathlib import Path
 st.set_page_config(page_title="Multiplication table",
                    page_icon="🔢")
 
-Questions.quick_questions("quick_code_ques.py")
+Questions.quick_questions("quick_code_ques.py",15)

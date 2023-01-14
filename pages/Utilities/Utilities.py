@@ -169,7 +169,7 @@ class Questions:
         return f
 
     @staticmethod
-    def quick_questions(name: str, key: Optional[str] = None, reload: bool = False, seconds: int = 40, write_answer: Optional[WriteAnswers] = None, show_answers: bool = False) -> None:
+    def quick_questions(name: str, sn_num: int, reload: bool = False, seconds: int = 40, write_answer: Optional[WriteAnswers] = None, show_answers: bool = False) -> None:
         '''
         This function creates a "quick questions" form for a code file in a specific format, as specified in the README file. 
         The function compares the user's input (answer) to the true output of the code snippet, 
@@ -183,9 +183,11 @@ class Questions:
             show_answers (bool, optional): When set to True, displays the current answer, useful for testing. Defaults to False.
         '''
         # init session_stete (ses) variables
+        key: str = f'set_qq_{sn_num}'
         def __init_session_stete():
-            pattern_load = re.compile(r'#[1-9](.|\n[^#])*')
+            pattern_load = re.compile(r'#[1-9](.|\n[^#])*') #regex pattern to split questions form file
             path: Path = Path(__file__).parents[0] / name
+
             ses.codes = []
             ses.bar = 0
             ses.successes_counter = ""
@@ -207,9 +209,14 @@ class Questions:
                     _outpot: str = ses.sub_pattern.sub(
                         "", compile.stdout.casefold())
                     ses.codes.append((_code, _outpot))
+            ses[key] = "wait" 
 
-        if "codes" not in ses or reload:
+        if key not in ses or reload:
             __init_session_stete()
+        if ses[key] == "wait":
+            if st.button("start 🏃‍♀️"):
+                ses[key] = "running" 
+                st.experimental_rerun()
         # init placeholder for components
         q = st.container()
         code_place = q.empty()
@@ -218,7 +225,7 @@ class Questions:
         successes = q.empty()
 
         # main loop, run until finished all code snippets
-        while len(ses.codes) > 1:
+        while len(ses.codes) > 1 and ses[key] == "running":
             if ses.bar == 100:  # bar is 100 when answer is correct or timeout
                 ses.successes_counter += happy_eomji() if ses.successes_f else sad_eomji()
                 ses.codes.pop(0)
@@ -245,16 +252,19 @@ class Questions:
                 time.sleep(ses.sleep_time)
                 ses.bar += 1
                 bar_place.progress(ses.bar)
-        finish_time: int = int(time.time() - ses.start_time)
-        count_successes: int = len(re.findall('[😀😁😆😘😍🥰🙂😚]', ses.successes_counter))
+        
+        if ses[key] == "running":
+            finish_time: int = int(time.time() - ses.start_time)
+            count_successes: int = len(re.findall(
+            '[😀😁😆😘😍🥰🙂😚]', ses.successes_counter))
+            ses.successes_counter =  f'You answered {count_successes} correct answers in the time of: {finish_time} seconds'
+            if write_answer:
+                write_answer.add_answer(
+                        f'correct answers:{count_successes}, time: {finish_time}', sn_num)
+            ses[key] ="finished"
 
         successes.write(
-            f'## You answered {count_successes} correct answers in the time of: {finish_time} seconds')
-        if write_answer:
-            count_successes = len(re.findall(
-                '[😀😁😆😘😍🥰🙂😚]', ses.successes_counter))
-            write_answer.add_answer(
-                f'correct answers:{count_successes}, time: {finish_time}', 1)
+            f'## {ses.successes_counter}')
 
 
 class Utilities:
