@@ -1,6 +1,7 @@
 from logging import PlaceHolder
 import pandas as pd
 import streamlit as st
+from streamlit import session_state as ses
 from pages.Utilities.Utilities import DataLoader, Utilities
 
 
@@ -17,8 +18,8 @@ st.image("https://media.giphy.com/media/scZPhLqaVOM1qG4lT9/giphy.gif")
 
 
 if Utilities.enter_name(st.session_state.names) == "admin":
-    status_ex1: DataLoader = DataLoader("status_ex1.csv")
-    status_multi: DataLoader = DataLoader("status_multi.csv")
+    status_ex1: DataLoader = DataLoader("answers_ex1.csv")
+    status_multi: DataLoader = DataLoader("answers_multi.csv")
     st.write("### ex1 ")
     placeHolder_ex1 = st.empty()
     st.write("### multi ")
@@ -30,3 +31,5 @@ if Utilities.enter_name(st.session_state.names) == "admin":
         status_ex1.reload()
     status_ex1.download()
     status_multi.download()
+
+    st.write(ses)
