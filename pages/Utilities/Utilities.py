@@ -347,7 +347,7 @@ class Utilities:
             # enter for admin
             if user_name == "admin":
                 password_field = st.empty()
-                password: str = password_field.text_input("Enter password")
+                password: str = password_field.text_input("Enter password",type="password")
                 if password == PASSWORD:
                     ses.user_name = user_name
                     plaseholder.success(f"{user_name} Welcome to our system")
