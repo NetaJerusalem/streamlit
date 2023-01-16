@@ -183,7 +183,8 @@ class Questions:
         file_name: str = Path(__file__).name
         with st.form(f"{form_title}_{file_name}"):
             st.subheader(form_title)
-            st.write(questoin)
+            for line in questoin.splitlines():
+                st.write(line)
             if caption:
                 st.caption(caption)
             # take the code and remove provided code from the answer
@@ -193,7 +194,7 @@ class Questions:
             if st.form_submit_button("Submit"):
                 if add_test_code:  # add code after answer
                     answer = answer + add_test_code
-                output = subprocess.run(
+                output: str = subprocess.run(
                     ["python", "-c", answer],
                     capture_output=True,
                     text=True,
@@ -347,7 +348,9 @@ class Utilities:
             # enter for admin
             if user_name == "admin":
                 password_field = st.empty()
-                password: str = password_field.text_input("Enter password",type="password")
+                password: str = password_field.text_input(
+                    "Enter password", type="password"
+                )
                 if password == PASSWORD:
                     ses.user_name = user_name
                     plaseholder.success(f"{user_name} Welcome to our system")
@@ -368,3 +371,12 @@ class Utilities:
             st.stop()
         else:
             return ses.user_name
+
+    @staticmethod
+    def first_time_message(msg: str) -> None:
+        page_name: str = Path(__file__).name
+        if page_name + "_msg" not in ses:
+            ses[page_name + "_msg"] = True
+            st.write(msg)
+            st.button("אוקיי, הבנתי")
+            st.stop()
