@@ -27,6 +27,8 @@ PASSWORD: Literal["13245"] = "13245"
 dfLoc = namedtuple("dfLoc", ("row", "column"))
 SAD_EOMJI: set[str] = {"😵‍💫", "😢", "😭", "😰", "😩"}
 HAPPY_EMOJI: set[str] = {"😀", "😁", "😆", "😘", "😍", "🥰", "🙂", "😚"}
+LOAD_PATTERN: str = r"^##\d+(.|\n)*?(?=##\d+)"  # https://regex101.com/r/W49Pw5/1
+REMOVE_PATTERN: str = r"\s+|\"|\'"
 
 
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:
@@ -177,6 +179,23 @@ class Questions:
         add_test_code: str = "",
         caption: str = "",
     ) -> None:
+        """
+        Create a new code question where the user is presented with a description of the task and a code editor
+        to answer the question.
+        Optionally, initial code can be provided and/or test code can be added to evaluate the answer.
+        A function can also be supplied to check if the answer is correct.
+
+        Args:
+            num_question (int): The unique number for the question.
+            question (str): The description of the task.
+            test_fn (Callable[[str], bool], optional): A function to test the answer. Defaults to None.
+            write_answer (WriteAnswers, optional): An object with a method `add_answer(answer, user_name, question_num)` to write the answer. Defaults to None.
+            code (str, optional): Code to display in the code editor at the start. Defaults to "".
+            show_output (bool, optional): Whether to show the output of code execution. Defaults to True.
+            title (str, optional): The title of the question. If empty, the number will be set to `num_question`. Defaults to "".
+            add_test_code (str, optional): Additional test code to add after the answer. Defaults to "".
+            caption (str, optional): A caption to display in the question. Defaults to "".
+        """
 
         # if the title is None
         form_title: str = title or f"Question {num_questoin}"
@@ -184,6 +203,8 @@ class Questions:
         with st.form(f"{form_title}_{file_name}"):
             st.subheader(form_title)
             for line in questoin.splitlines():
+                # deplay differnt line in different write,
+                # (is the only way to display different lines in st.write)
                 st.write(line)
             if caption:
                 st.caption(caption)
@@ -194,6 +215,7 @@ class Questions:
             if st.form_submit_button("Submit"):
                 if add_test_code:  # add code after answer
                     answer = answer + add_test_code
+                # evaluate the answer
                 output: str = subprocess.run(
                     ["python", "-c", answer],
                     capture_output=True,
@@ -232,32 +254,15 @@ class Questions:
         key: str = f"quick_questions_{num_questoin}_{file_name}"
 
         def __init_session_stete() -> None:
-            # regex pattern to split questions form file
-            pattern_load = re.compile(r"#[1-9](.|\n[^#])*")
             path: Path = Path(__file__).parents[0] / name
-
-            ses.codes = []
+            ses.codes = Utilities.load_codes(path)
             ses.bar = 0
             ses.successes_counter = ""
             ses.sub_pattern = re.compile(r"\s+|\"|\'")
             ses.successes_f = False
             ses.sleep_time = seconds / 100
-            ses.start_time = time.time()
-            with open(path) as f:  # load all questions form file
-                iter_codes: Iterator[re.Match[str]] = pattern_load.finditer(f.read())
-                for match_code in iter_codes:
-                    _code: str = match_code.group()
-                    # run code and check if it print something
-                    compile: subprocess.CompletedProcess[str] = subprocess.run(
-                        ["python", "-c", _code],
-                        capture_output=True,
-                        text=True,
-                    )
-                    if not compile.stdout or compile.returncode:
-                        raise RuntimeError("Execute code filed, code:{}".format(_code))
-                    _outpot: str = ses.sub_pattern.sub("", compile.stdout.casefold())
-                    ses.codes.append((_code, _outpot))
             ses[key] = "wait"
+            ses.start_time = time.time()
 
         if key not in ses or reload:
             __init_session_stete()
@@ -317,14 +322,6 @@ class Questions:
 
         successes.write(f"## {ses.successes_counter}")
 
-    @staticmethod
-    def test_code_by_re(pattern: str) -> Callable[[str], bool]:
-        def f(code: str) -> bool:
-            f_pattern = re.compile(pattern)
-            return bool(f_pattern.match(code))
-
-        return f
-
 
 class Utilities:
     """many tools"""
@@ -380,3 +377,64 @@ class Utilities:
             st.write(msg)
             st.button("אוקיי, הבנתי")
             st.stop()
+
+    @staticmethod
+    def load_codes(
+        path, load_pattern: str = LOAD_PATTERN, remove_pattern: str = REMOVE_PATTERN
+    ) -> List[Tuple[str, str]]:
+        """
+        Load code snippets from file using a specified regex pattern to separate the file into several snippets,
+        and another pattern to remove spaces and newlines from the output.
+
+        Args:
+            path (str): Path to the file to load.
+            load_pattern (str, optional): Regex pattern to separate the file into code snippets. Defaults to LOAD_PATTERN.
+            remove_pattern (str, optional): Regex pattern to remove from the output code. Defaults to REMOVE_PATTERN.
+
+        Raises:
+            RuntimeError: If the code snippet raises an exception or does not print anything.
+
+        Returns:
+            List[Tuple[str, str]]: A list of tuples containing the code snippet and the desired output.
+        """
+        # regex pattern to split questions form file
+        _load_pattern: re.Pattern[str] = re.compile(load_pattern, re.M)
+        _remove_pattern: re.Pattern[str] = re.compile(remove_pattern)
+        ret: List[Tuple[str, str]] = []
+
+        with open(path) as f:  # Iterate through code snippets
+            iter_codes: Iterator[re.Match[str]] = _load_pattern.finditer(f.read())
+            for match_code in iter_codes:
+                _code: str = match_code.group()
+                # Run code and check if it prints something
+                compile: subprocess.CompletedProcess[str] = subprocess.run(
+                    ["python", "-c", _code],
+                    capture_output=True,
+                    text=True,
+                )
+                # If code does not print something, or there was an error in running the code
+                #  (even if it printed something)
+                if not compile.stdout or compile.returncode:
+                    raise RuntimeError("Execute code filed, code:{}".format(_code))
+                # Lower all characters and remove spaces and newlines
+                _outpot: str = _remove_pattern.sub("", compile.stdout.casefold())
+                ret.append((_code, _outpot))
+        return ret
+
+    @staticmethod
+    def test_code_by_re(pattern: str) -> Callable[[str], bool]:
+        """
+        return function that checks if some text matches to a given pattern
+
+        Args:
+            pattern (str): desaired pattern to check
+
+        Returns:
+            Callable[[str], bool]: function that returns true if code match to pattern else false
+        """
+
+        def f(code: str) -> bool:
+            f_pattern = re.compile(pattern)
+            return bool(f_pattern.match(code))
+
+        return f
