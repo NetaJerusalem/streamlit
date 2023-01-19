@@ -29,8 +29,9 @@ PASSWORD: Literal["13245"] = "13245"
 dfLoc = namedtuple("dfLoc", ("row", "column"))
 SAD_EOMJI: set[str] = {"😵‍💫", "😢", "😭", "😰", "😩"}
 HAPPY_EMOJI: set[str] = {"😀", "😁", "😆", "😘", "😍", "🥰", "🙂", "😚"}
-LOAD_PATTERN: str = r"^##\d+(.|\n)*?(?=##\d+)"  # https://regex101.com/r/W49Pw5/1
-REMOVE_PATTERN: str = r"\s+|\"|\'"
+LOAD_PATTERN: str = r"^##\d+(.|\n)*?(?=##\d+)"  # https://regex101.com/r/Tphpe0/1
+TOP_ROW_PATTERN: str = r"^##\d+.*(?=\n)"  # https://regex101.com/r/xMqjlJ/1
+CLINE_ANSWER_PATTERN: str = r"\s+|\"|\'"
 
 
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:
@@ -354,7 +355,7 @@ class Questions:
             path: Path = Path(__file__).parents[0] / name
             ses.codes = Utilities.load_codes(path)
             ses.successes_counter = ""
-            ses.sub_pattern = re.compile(REMOVE_PATTERN)
+            ses.sub_pattern = re.compile(CLINE_ANSWER_PATTERN)
             ses.successes_f = False
             ses.next = False  #
             ses[key_set] = "wait"
@@ -478,7 +479,10 @@ class Utilities:
 
     @staticmethod
     def load_codes(
-        path, load_pattern: str = LOAD_PATTERN, remove_pattern: str = REMOVE_PATTERN
+        path,
+        load_pattern: str = LOAD_PATTERN,
+        remove_pattern: str = CLINE_ANSWER_PATTERN,
+        data_pattern: str = TOP_ROW_PATTERN,
     ) -> List[Dict[str, Any]]:
         """
         Load code snippets from file using a specified regex pattern to separate the file into several snippets,
@@ -498,6 +502,7 @@ class Utilities:
         # regex pattern to split questions form file
         _load_pattern: re.Pattern[str] = re.compile(load_pattern, re.M)
         _remove_pattern: re.Pattern[str] = re.compile(remove_pattern)
+        _data_pattern: re.Pattern[str] = re.compile(data_pattern, re.M)
         ret: List[Dict[str, Any]] = []
 
         with open(path) as f:  # Iterate through code snippets
@@ -516,6 +521,10 @@ class Utilities:
                     raise RuntimeError("Execute code filed, code:{}".format(_code))
                 # Lower all characters and remove spaces and newlines
                 _output: str = _remove_pattern.sub("", compile.stdout.casefold())
+                _data_match = _data_pattern.match(_code)
+                if _data_match:
+                    _data = _data_match.group()
+                    _code = _data_pattern.sub("", _code)
                 ret.append({"code": _code, "output": _output})
         return ret
 
