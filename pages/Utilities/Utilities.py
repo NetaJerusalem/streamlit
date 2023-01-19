@@ -4,6 +4,8 @@ import pandas as pd
 from pandas import DataFrame
 import re
 from typing import (
+    Any,
+    Dict,
     List,
     Literal,
     Optional,
@@ -293,7 +295,7 @@ class Questions:
                 "What the output of this code?",
                 key=f"{file_name}_{str(len(ses.codes))}",
             )
-            code, output = ses.codes[0]
+            code, output = ses.codes[0]["code"], ses.codes[0]["output"]
             code_place.code(code, language="python")
 
             if show_answers:  # for testing show the current answer
@@ -390,7 +392,7 @@ class Questions:
                 q.button("next", on_click=__next_question)
             # write the amout of successes
             key_q = f"{file_name}_{str(len(ses.codes))}"
-            code, output = ses.codes[0]
+            code, output = ses.codes[0]["code"], ses.codes[0]["output"]
             code_place.code(code, language="python")
             input_place.text_input(
                 "What the output of this code?",
@@ -477,7 +479,7 @@ class Utilities:
     @staticmethod
     def load_codes(
         path, load_pattern: str = LOAD_PATTERN, remove_pattern: str = REMOVE_PATTERN
-    ) -> List[Tuple[str, str]]:
+    ) -> List[Dict[str, Any]]:
         """
         Load code snippets from file using a specified regex pattern to separate the file into several snippets,
         and another pattern to remove spaces and newlines from the output.
@@ -496,7 +498,7 @@ class Utilities:
         # regex pattern to split questions form file
         _load_pattern: re.Pattern[str] = re.compile(load_pattern, re.M)
         _remove_pattern: re.Pattern[str] = re.compile(remove_pattern)
-        ret: List[Tuple[str, str]] = []
+        ret: List[Dict[str, Any]] = []
 
         with open(path) as f:  # Iterate through code snippets
             iter_codes: Iterator[re.Match[str]] = _load_pattern.finditer(f.read())
@@ -513,8 +515,8 @@ class Utilities:
                 if not compile.stdout or compile.returncode:
                     raise RuntimeError("Execute code filed, code:{}".format(_code))
                 # Lower all characters and remove spaces and newlines
-                _outpot: str = _remove_pattern.sub("", compile.stdout.casefold())
-                ret.append((_code, _outpot))
+                _output: str = _remove_pattern.sub("", compile.stdout.casefold())
+                ret.append({"code": _code, "output": _output})
         return ret
 
     @staticmethod
