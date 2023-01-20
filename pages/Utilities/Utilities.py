@@ -30,8 +30,11 @@ dfLoc = namedtuple("dfLoc", ("row", "column"))
 SAD_EOMJI: set[str] = {"😵‍💫", "😢", "😭", "😰", "😩"}
 HAPPY_EMOJI: set[str] = {"😀", "😁", "😆", "😘", "😍", "🥰", "🙂", "😚"}
 LOAD_PATTERN: str = r"^##\d+(.|\n)*?(?=##\d+)"  # https://regex101.com/r/Tphpe0/1
-TOP_ROW_PATTERN: str = r"^##\d+.*(?=\n)"  # https://regex101.com/r/xMqjlJ/1
+# TOP_ROW_PATTERN: str = r"^##\d+.*(?=\n)"  # https://regex101.com/r/xMqjlJ/1
+# DATA_PATTERN:str = r"{.*}$"                 #https://regex101.com/r/peTvfp/1
+TOP_ROW_PATTERN: str = r"^##\d+\s*(?P<data>{.*}$)?(?=\n)"  # https://regex101.com/r/7oTSAI/1
 CLINE_ANSWER_PATTERN: str = r"\s+|\"|\'"
+
 
 
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:
@@ -482,7 +485,7 @@ class Utilities:
         path,
         load_pattern: str = LOAD_PATTERN,
         remove_pattern: str = CLINE_ANSWER_PATTERN,
-        data_pattern: str = TOP_ROW_PATTERN,
+        top_row_pattern: str = TOP_ROW_PATTERN,
     ) -> List[Dict[str, Any]]:
         """
         Load code snippets from file using a specified regex pattern to separate the file into several snippets,
@@ -502,7 +505,7 @@ class Utilities:
         # regex pattern to split questions form file
         _load_pattern: re.Pattern[str] = re.compile(load_pattern, re.M)
         _remove_pattern: re.Pattern[str] = re.compile(remove_pattern)
-        _data_pattern: re.Pattern[str] = re.compile(data_pattern, re.M)
+        _top_row_pattern: re.Pattern[str] = re.compile(top_row_pattern, re.M)
         ret: List[Dict[str, Any]] = []
 
         with open(path) as f:  # Iterate through code snippets
@@ -521,11 +524,14 @@ class Utilities:
                     raise RuntimeError("Execute code filed, code:{}".format(_code))
                 # Lower all characters and remove spaces and newlines
                 _output: str = _remove_pattern.sub("", compile.stdout.casefold())
-                _data_match = _data_pattern.match(_code)
-                if _data_match:
-                    _data = _data_match.group()
-                    _code = _data_pattern.sub("", _code)
-                ret.append({"code": _code, "output": _output})
+                _top_row_match = _top_row_pattern.match(_code)
+                _dict_code = {}
+                if _top_row_match:
+                    _code = _top_row_pattern.sub("", _code)
+                    if _top_row_match.group("data"):
+                        _dict_code = _dict_code | eval(_top_row_match.group("data"))
+                _dict_code = _dict_code |{"code": _code, "output": _output}
+                ret.append(_dict_code)
         return ret
 
     @staticmethod
