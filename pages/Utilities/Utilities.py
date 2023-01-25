@@ -24,6 +24,9 @@ import subprocess
 from streamlit_ace import st_ace
 from collections import Counter, namedtuple
 import time
+import logging
+
+logging.basicConfig(format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
 
 PASSWORD: Literal["13245"] = "13245"
 dfLoc = namedtuple("dfLoc", ("row", "column"))
@@ -32,9 +35,10 @@ HAPPY_EMOJI: set[str] = {"😀", "😁", "😆", "😘", "😍", "🥰", "🙂",
 LOAD_PATTERN: str = r"^##\d+(.|\n)*?(?=##\d+)"  # https://regex101.com/r/Tphpe0/1
 # TOP_ROW_PATTERN: str = r"^##\d+.*(?=\n)"  # https://regex101.com/r/xMqjlJ/1
 # DATA_PATTERN:str = r"{.*}$"                 #https://regex101.com/r/peTvfp/1
-TOP_ROW_PATTERN: str = r"^##\d+\s*(?P<data>{.*}$)?(?=\n)"  # https://regex101.com/r/7oTSAI/1
+TOP_ROW_PATTERN: str = (
+    r"^##\d+\s*(?P<data>{.*}$)?(?=\n)"  # https://regex101.com/r/7oTSAI/1
+)
 CLINE_ANSWER_PATTERN: str = r"\s+|\"|\'"
-
 
 
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:
@@ -235,100 +239,6 @@ class Questions:
                     write_answer.add_answer(answer.replace(code, ""), num_questoin)
 
     @staticmethod
-    def quick_questions(
-        name: str,
-        num_questoin: int,
-        reload: bool = False,
-        seconds: int = 40,
-        write_answer: Optional[WriteAnswers] = None,
-        show_answers: bool = False,
-    ) -> None:
-        """
-        This function creates a "quick questions" form for a code file in a specific format, as specified in the README file.
-        The function compares the user's input (answer) to the true output of the code snippet,
-        ignoring spaces, line breaks, quotation marks, doubles or singles.
-
-        Args:
-            name (str): The name of the file from which the code snippet is uploaded. The file must conform to the format specified in the README file.
-            key (Optional[str], optional): When creating multiple quick questions, this argument specifies a unique key for each question.
-            reload (bool, optional): When set to True, deletes all progress and starts the game from the beginning. Defaults to False.
-            seconds (int, optional): The amount of time for each question. Defaults to 40.
-            show_answers (bool, optional): When set to True, displays the current answer, useful for testing. Defaults to False.
-        """
-        # init session_stete (ses) variables
-        file_name: str = Path(__file__).name
-        key: str = f"quick_questions_{num_questoin}_{file_name}"
-
-        def __init_session_stete() -> None:
-            path: Path = Path(__file__).parents[0] / name
-            ses.codes = Utilities.load_codes(path)
-            ses.bar = 0
-            ses.successes_counter = ""
-            ses.sub_pattern = re.compile(r"\s+|\"|\'")
-            ses.successes_f = False
-            ses.sleep_time = seconds / 100
-            ses[key] = "wait"
-            ses.start_time = time.time()
-
-        if key not in ses or reload:
-            __init_session_stete()
-        if ses[key] == "wait":
-            if st.button("start 🏃‍♀️"):
-                ses[key] = "running"
-                st.experimental_rerun()
-
-        # init placeholder for components
-        q = st.container()
-        code_place = q.empty()
-        input_place = q.empty()
-        bar_place = q.empty().progress(ses.bar)
-        successes = q.empty()
-
-        # main loop, run until finished all code snippets
-        while len(ses.codes) > 1 and ses[key] == "running":
-            if ses.bar == 100:  # bar is 100 when answer is correct or timeout
-                ses.successes_counter += happy_eomji() if ses.successes_f else sad_eomji()
-                ses.codes.pop(0)
-                ses.bar = 0
-                ses.successes_f = False
-                input_place.empty()
-
-            # write the amout of successes
-            successes.write(f"# {ses.successes_counter}")
-            answer = input_place.text_input(
-                "What the output of this code?",
-                key=f"{file_name}_{str(len(ses.codes))}",
-            )
-            code, output = ses.codes[0]["code"], ses.codes[0]["output"]
-            code_place.code(code, language="python")
-
-            if show_answers:  # for testing show the current answer
-                successes.write(f"the current answer is `{output}`")
-            if answer:
-                # eveluat the answer without spaces quotes or newlines
-                if output == ses.sub_pattern.sub("", answer.casefold()):
-                    ses.successes_f = True
-                    ses.bar = 100
-
-            while ses.bar < 100:
-                time.sleep(ses.sleep_time)
-                ses.bar += 1
-                bar_place.progress(ses.bar)
-
-        if ses[key] == "running":
-            finish_time: int = int(time.time() - ses.start_time)
-            count_successes: int = len(re.findall("[😀😁😆😘😍🥰🙂😚]", ses.successes_counter))
-            ses.successes_counter = f"You answered {count_successes} correct answers in the time of: {finish_time} seconds"
-            if write_answer:
-                write_answer.add_answer(
-                    f"correct answers:{count_successes}, time: {finish_time}",
-                    num_questoin,
-                )
-            ses[key] = "finished"
-
-        successes.write(f"## {ses.successes_counter}")
-
-    @staticmethod
     def quick_questions_no_bar(
         name: str,
         num_questoin: int,
@@ -365,6 +275,7 @@ class Questions:
             ses.start_time = time.time()
 
         def __next_question() -> None:
+            logging.info(f"__next_question {ses[key_q]=} ,{output=}, {key_q=}")
             ses.successes_counter += happy_eomji() if ses.successes_f else sad_eomji()
             ses.codes.pop(0)
             ses.successes_f = False
@@ -372,6 +283,8 @@ class Questions:
             input_place.empty()
 
         def __check_answer() -> None:
+            logging.info(f"__check_answer {ses[key_q]=} ,{output=}, {key_q=}")
+
             if output == ses.sub_pattern.sub("", ses[key_q].casefold()):
                 ses.successes_f = True
                 __next_question()
@@ -423,6 +336,109 @@ class Questions:
             ses[key_set] = "finished"
 
         successes.write(f"## {ses.successes_counter}")
+
+
+class QuickQuestions:
+    """
+    This function creates a "quick questions" form for a code file in a specific format, as specified in the README file.
+    The function compares the user's input (answer) to the true output of the code snippet,
+    ignoring spaces, line breaks, quotation marks, doubles or singles.
+
+    Args:
+        name (str): The name of the file from which the code snippet is uploaded. The file must conform to the format specified in the README file.
+        key (Optional[str], optional): When creating multiple quick questions, this argument specifies a unique key for each question.
+        reload (bool, optional): When set to True, deletes all progress and starts the game from the beginning. Defaults to False.
+        seconds (int, optional): The amount of time for each question. Defaults to 40.
+        show_answers (bool, optional): When set to True, displays the current answer, useful for testing. Defaults to False.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        num_questoin: int,
+        reload: bool = False,
+        seconds: int = 40,
+        write_answer: Optional[WriteAnswers] = None,
+        show_answers: bool = False,
+    ) -> None:
+
+        # init session_stete (ses) variables
+        file_name: str = Path(__file__).name
+        key_set: str = f"quick_questions_{num_questoin}_{file_name}"
+        self.key_set = key_set
+        self.reload = reload
+        self.write_answer = write_answer
+        self.show_answers = show_answers
+        self.num_questoin = num_questoin
+        if key_set not in ses:
+            file_name: str = Path(__file__).name
+            path: Path = Path(__file__).parents[0] / name
+            ses.codes = Utilities.load_codes(path)
+            ses.bar = 0
+            ses.successes_counter = ""
+            ses.sub_pattern = re.compile(r"\s+|\"|\'")
+            ses.successes_f = False
+            ses.sleep_time = seconds / 100
+            ses[key_set] = "running"
+            ses.start_time = time.time()
+        self.run()
+
+    def __next_question(self) -> str:
+        ses.successes_counter += happy_eomji() if ses.successes_f else sad_eomji()
+        ses.codes.pop(0)
+        ses.successes_f = False
+        ses.next = False
+        ses.bar = 0
+
+    def key_q(self) -> str:
+        return f"qq_{str(len(ses.codes))}"
+
+    def __check_answer(self, key: str):
+        if ses.codes[0]["output"] == ses[key]:
+            ses.successes_f = True
+            self.__next_question()
+
+
+    def run(self) -> None:
+        # init placeholder for components
+        q = st.container()
+
+        # main loop, run until finished all code snippets
+        if len(ses.codes) > 1 and ses[self.key_set] == "running":
+
+            # write the amout of successes
+            code = ses.codes[0]["code"]
+            q.code(code, language="python")
+            input_place = q.empty()
+            input_place.text_input(
+                "What the output of this code?",
+                key=self.key_q(),
+                on_change=self.__check_answer,
+                args=(self.key_q(),),
+            )
+            bar_place = q.progress(ses.bar)
+            q.write(f"# {ses.successes_counter}")
+            while ses.bar < 100:
+                time.sleep(ses.sleep_time)
+                ses.bar += 1
+                bar_place.progress(ses.bar)
+            self.__next_question()
+            st.experimental_rerun()
+        else:
+            if ses[self.key_set] == "running":
+                finish_time: int = int(time.time() - ses.start_time)
+                count_successes: int = len(
+                    re.findall("[😀😁😆😘😍🥰🙂😚]", ses.successes_counter)
+                )
+                ses.successes_counter = f"You answered {count_successes} correct answers in the time of: {finish_time} seconds"
+                if self.write_answer:
+                    self.write_answer.add_answer(
+                        f"correct answers:{count_successes}, time: {finish_time}",
+                        self.num_questoin,
+                    )
+                ses[self.key_set] = "finished"
+                st.write(ses.successes_counter)
+
 
 
 class Utilities:
@@ -530,7 +546,7 @@ class Utilities:
                     _code = _top_row_pattern.sub("", _code)
                     if _top_row_match.group("data"):
                         _dict_code = _dict_code | eval(_top_row_match.group("data"))
-                _dict_code = _dict_code |{"code": _code, "output": _output}
+                _dict_code = _dict_code | {"code": _code, "output": _output}
                 ret.append(_dict_code)
         return ret
 
