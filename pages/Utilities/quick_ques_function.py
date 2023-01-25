@@ -1,10 +1,11 @@
-##1
+##1 {"key":"value","more_key":["list", "of", "values"],"and_more_key":[{"dict":1,"of":False,"data":True}]}
 def foo():
     print("foo")
 
 foo()
 
-##2
+
+##2   {"key":"value","more_key":["list", "of", "values"],"and_more_key":[{"dict":1,"of":False,"data":True}]}
 def foo():
     return "foo"
 
