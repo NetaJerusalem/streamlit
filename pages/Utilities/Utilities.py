@@ -39,6 +39,8 @@ TOP_ROW_PATTERN: str = (
     r"^##\d+\s*(?P<data>{.*}$)?(?=\n)"  # https://regex101.com/r/7oTSAI/1
 )
 CLINE_ANSWER_PATTERN: str = r"\s+|\"|\'"
+PATTERN_QUESTION:str = r"(?P<TAG>^##\d+)\s*(?P<DATA>{.*}$)?(?=\n)(?P<CODE>(.|\n)*?)(?P=TAG)"   #https://regex101.com/r/kJ9a12/1
+PATTERN_QUESTION:str = r"(?P<Q>(?P<TAG>^##\d+)\s*(?P<DATA>{.*}$)?(?=\n)(?P<CODE>(.|\n)*?)(?P=TAG))" #https://regex101.com/r/iYxRyF/1
 
 
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:

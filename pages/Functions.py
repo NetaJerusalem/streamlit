@@ -4,11 +4,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from pages.Utilities.Utilities import WriteAnswers, Questions, Utilities, DataLoader
-
+from __init__ import foo
 names_df: DataLoader = DataLoader("names.csv")
 status_df: DataLoader = DataLoader("answers_ex1.csv")
 
 st.set_page_config(page_title="Functions", page_icon="🔢")
+foo()
+
 name = Utilities.enter_name(names_df)
 Utilities.first_time_message(
 """# חשוב מאוד
