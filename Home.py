@@ -2,7 +2,7 @@ from logging import PlaceHolder
 import pandas as pd
 import streamlit as st
 from streamlit import session_state as ses
-from pages.Utilities.Utilities import DataLoader, Utilities
+from __init__ import DataLoader, Utilities
 
 
 st.session_state.names = DataLoader("names.csv")
