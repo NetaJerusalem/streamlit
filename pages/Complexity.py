@@ -58,7 +58,7 @@ Questions.regular_question(
     """
     What is the runtime of this function?
     """,
-    "4*n",
+    "n",
     code="""
 import time
 Mysterious_function(100)
@@ -68,7 +68,7 @@ Mysterious_function(100)
 import time
 do_something = lambda : time.sleep(0.001)
 def Mysterious_function(n):
-    for i in range(4*n):
+    for i in range(n):
         do_something()
 """,
 )
@@ -78,7 +78,7 @@ Questions.regular_question(
     """
     What is the runtime of this function?
     """,
-    "n*3",
+    "n*3,3*n",
     code="""
 import time
     
@@ -103,7 +103,7 @@ Questions.regular_question(
     """
     What is the runtime of this function?
     """,
-    "n+2",
+    "n+2,2+n",
     code="""
 import time
     
@@ -125,7 +125,7 @@ Questions.regular_question(
     """
     What is the runtime of this function?
     """,
-    "n+m",
+    "n+m,m+n",
     code="""
 import time
     
@@ -147,7 +147,7 @@ Questions.regular_question(
     """
     What is the runtime of this function?
     """,
-    "n**2",
+    "n**2,n*n",
     code="""
 import time
     
@@ -168,7 +168,7 @@ Questions.regular_question(
     """
     What is the runtime of this function?
     """,
-    "n**2",
+    "n**2,n*n",
     code="""
 import time
 Mysterious_function(100)
@@ -187,7 +187,7 @@ Questions.regular_question(
     """
     What is the runtime of this function?
     """,
-    "n*m",
+    "n*m,m*n",
     code="""
 import time
     
@@ -208,7 +208,7 @@ Questions.regular_question(
     """
     What is the runtime of this function?
     """,
-    "n*m**2",
+    "n*m**2,m**2*n",
     code="""
 import time
 Mysterious_function(100)

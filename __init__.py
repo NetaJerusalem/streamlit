@@ -43,6 +43,7 @@ PATTERN_QUESTION: str = r"(?P<TAG>^##\d+)\s*(?P<DATA>{.*}$)?(?=\n)(?P<CODE>(.|\n
 PATTERN_QUESTION: str = r"(?P<Q>(?P<TAG>^##\d+)\s*(?P<DATA>{.*}$)?(?=\n)(?P<CODE>(.|\n)*?)(?P=TAG))"  # https://regex101.com/r/iYxRyF/1
 sub_pattern = re.compile(CLINE_ANSWER_PATTERN)
 
+
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:
     """
     return function that randomly returns emoji
@@ -176,7 +177,6 @@ class WriteAnswers:
 
 
 class Questions:
-    
     @staticmethod
     def execute_question(
         num_questoin: int,
@@ -240,27 +240,24 @@ class Questions:
 
     @staticmethod
     def regular_question(
-        key:str,
+        key: str,
         num_questoin: int,
         questoin: str,
-        current_answer:str,
+        current_answer: str,
         test_fn: Optional[Callable[[str], bool]] = None,
         write_answer: Optional[WriteAnswers] = None,
         code: str = "",
         title: str = "",
         code_add_before: str = "",
         code_add_after: str = "",
-
     ) -> None:
-        
-
         key = key
-        k_code = key+"_code"
-        k_code_to_run = key+"_code_to_run"
-        k_output = key+"_output"
-        k_current_answer = key+"_current_answer"
-        k_answer = key+"_answer"
-        k_button = key+"_button"
+        k_code = key + "_code"
+        k_code_to_run = key + "_code_to_run"
+        k_output = key + "_output"
+        k_current_answer = key + "_current_answer"
+        k_answer = key + "_answer"
+        k_button = key + "_button"
         if key not in ses:
             logging.info("init ses")
             logging.info(key)
@@ -269,13 +266,15 @@ class Questions:
             ses[k_code_to_run] = ""
             ses[k_output] = ""
             ses[k_answer] = ""
-            ses[k_current_answer] = current_answer
-            
-        
+            ses[k_current_answer] = [
+                sub_pattern.sub("", answer.casefold())
+                for answer in current_answer.split(",")
+            ]
+
         def _eval_code() -> None:
             eval_code = f"{code_add_before}\n{ses[k_code_to_run]}\n{code_add_after}"
             logging.info(eval_code)
-            ses[k_output] =  subprocess.run(
+            ses[k_output] = subprocess.run(
                 ["python", "-c", eval_code],
                 capture_output=True,
                 text=True,
@@ -288,19 +287,19 @@ class Questions:
             st.subheader(form_title)
             st.write(questoin)
             # take the code and remove provided code from the answer
-            ses[k_code_to_run] = st_ace(key =key+"_ace",value=ses[k_code], language="python",auto_update=True)
-            button, out_code = st.columns([1,5])
-            button.button("run code",key=key+"_run",on_click=_eval_code)
+            ses[k_code_to_run] = st_ace(
+                key=key + "_ace", value=ses[k_code], language="python", auto_update=True
+            )
+            button, out_code = st.columns([1, 5])
+            button.button("run code", key=key + "_run", on_click=_eval_code)
             out_code.text(ses[k_output])
-            st.text_input("Answer",key=k_answer)
+            st.text_input("Answer", key=k_answer)
             # evaluate the code
-            if st.button("Submit",key=k_button):
-                if sub_pattern.sub("", ses[k_answer].casefold()) ==sub_pattern.sub("", ses[k_current_answer].casefold()):
+            if st.button("Submit", key=k_button):
+                if sub_pattern.sub("", ses[k_answer].casefold()) in ses[k_current_answer]:
                     st.subheader("Current answer")
                 else:
                     st.subheader("Try again...")
-
-
 
     @staticmethod
     def quick_questions_no_bar(
