@@ -4,8 +4,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from __init__ import WriteAnswers, Questions, Utilities, DataLoader
-names_df: DataLoader = DataLoader("names.csv")
-status_df: DataLoader = DataLoader("answers_ex1.csv")
+names_df: DataLoader = DataLoader("names_and_answers/names.csv")
+status_df: DataLoader = DataLoader("names_and_answers/answers_ex1.csv")
 
 st.set_page_config(page_title="Functions", page_icon="🔢")
 

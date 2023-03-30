@@ -65,7 +65,7 @@ happy_eomji: Callable[[], str] = _random_eomji(HAPPY_EMOJI)
 
 
 class DataLoader:
-    def __init__(self, name: str, path: Optional[Path] = None) -> None:
+    def __init__(self, path: str) -> None:
         """
         initial data loader instance, connected to csv file
         can be used to write data (answers) to a file
@@ -75,10 +75,7 @@ class DataLoader:
             path (Optional[Path], optional): if is path find the file in path
             otherwise find file in Utilitis folder. Defaults to None.
         """
-        if path:
-            self.path: Path = path / name
-        else:
-            self.path = Path("data") / name
+        self.path = Path(path) 
         self.df: DataFrame = pd.read_csv(self.path, skipinitialspace=True, dtype="string")
 
     def reload(self) -> DataFrame:
@@ -268,7 +265,7 @@ class Questions:
 
         def __init_session_stete() -> None:
             path: Path = Path(__file__).parents[0] / name
-            ses.codes = Utilities.load_codes(path)
+            ses.codes = Utilities.load_codes(path,test=True)
             ses.successes_counter = ""
             ses.sub_pattern = re.compile(CLINE_ANSWER_PATTERN)
             ses.successes_f = False
@@ -498,9 +495,10 @@ class Utilities:
     @staticmethod
     def load_codes(
         path,
-        load_pattern: str = LOAD_PATTERN,
+        load_pattern: str = PATTERN_QUESTION,
         remove_pattern: str = CLINE_ANSWER_PATTERN,
         top_row_pattern: str = TOP_ROW_PATTERN,
+        test:bool = False
     ) -> List[Dict[str, Any]]:
         """
         Load code snippets from file using a specified regex pattern to separate the file into several snippets,
@@ -526,7 +524,9 @@ class Utilities:
         with open(path) as f:  # Iterate through code snippets
             iter_codes: Iterator[re.Match[str]] = _load_pattern.finditer(f.read())
             for match_code in iter_codes:
-                _code: str = match_code.group()
+                _code: str = match_code.group("CODE")
+                if test:
+                    logging.info(match_code.group())
                 # Run code and check if it prints something
                 compile: subprocess.CompletedProcess[str] = subprocess.run(
                     ["python", "-c", _code],
@@ -536,15 +536,14 @@ class Utilities:
                 # If code does not print something, or there was an error in running the code
                 #  (even if it printed something)
                 if not compile.stdout or compile.returncode:
-                    raise RuntimeError("Execute code filed, code:{}".format(_code))
+                    # raise RuntimeError("Execute code filed, code:{}".format(_code))
+                    logging.error("Execute code filed, code:{}".format(_code))
                 # Lower all characters and remove spaces and newlines
                 _output: str = _remove_pattern.sub("", compile.stdout.casefold())
-                _top_row_match = _top_row_pattern.match(_code)
+                _top_row_match = match_code.group("DATA")
                 _dict_code = {}
                 if _top_row_match:
-                    _code = _top_row_pattern.sub("", _code)
-                    if _top_row_match.group("data"):
-                        _dict_code = _dict_code | eval(_top_row_match.group("data"))
+                    _dict_code = _dict_code | eval(_top_row_match)
                 _dict_code = _dict_code | {"code": _code, "output": _output}
                 ret.append(_dict_code)
         return ret
