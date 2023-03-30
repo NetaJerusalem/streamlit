@@ -1,4 +1,4 @@
-from logging import PlaceHolder
+import logging
 import pandas as pd
 import streamlit as st
 from streamlit import session_state as ses
@@ -17,7 +17,11 @@ st.write("Please select the required exercise on the left")
 st.image("https://media.giphy.com/media/scZPhLqaVOM1qG4lT9/giphy.gif")
 
 st.write(ses)
-# if Utilities.enter_name(st.session_state.names) == "admin":
+
+if Utilities.enter_name(st.session_state.names) == "admin":
+    logging.info("admin entering")
+    
+    
 #     status_ex1: DataLoader = DataLoader("answers_ex1.csv")
 #     status_multi: DataLoader = DataLoader("answers_multi.csv")
 #     st.write("### ex1 ")
