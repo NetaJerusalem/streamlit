@@ -20,35 +20,205 @@ st.dataframe(
     status_df.df.loc[status_df.df["NAME"] == name].replace([np.nan, " "], "🤔"),
     use_container_width=True,
 )
+
+st.write("""
+The variable is always `n` or `m`,
+If you need to add constants, use a plus sign, `+`
+If multiplying by a constant, use the multiplication sign `*`
+If you need to specify a predicate, use `**`
+
+You won't always need to use the time measurement
+""")
 Questions.regular_question(
     "q1",
     1,
     """
-    Create a function that takes a number as an input and __returns__ the square of that number
+    What is the runtime of this function?
     """,
     "n",
-    code="""import time\n\ndef f1(n):\n\tfor i in range(n):\n\t\tdo_something()""",
-    write_answer=write_answers,
-    code_add_before="import time\ndo_something = lambda : time.sleep(0.001)",
-)
+    code="""
+import time
+    
+def f1(n):
+    for i in range(n):
+        do_something()
 
+start  = time.time()
+f1(1000)
+end = time.time()
+""",
+    write_answer=write_answers,
+    code_add_before="""import time
+do_something = lambda : time.sleep(0.0001)
+    """,
+)
 Questions.regular_question(
     "q2",
     2,
     """
-    Create a function that takes a number as an input and __returns__ the square of that number
+    What is the runtime of this function?
     """,
-    "n",
-    code="""import time\n\ndef f1(n):\n\tfor i in range(n):\n\t\tdo_something()""",
+    "4*n",
+    code="""
+import time
+Mysterious_function(100)
+""",
     write_answer=write_answers,
-    code_add_before="import time\ndo_something = lambda : time.sleep(0.001)",
+    code_add_before="""
+import time
+do_something = lambda : time.sleep(0.001)
+def Mysterious_function(n):
+    for i in range(4*n):
+        do_something()
+""",
 )
 Questions.regular_question(
     "q3",
     3,
     """
-    Create a function that takes a number as an input and __returns__ the square of that number
+    What is the runtime of this function?
+    """,
+    "n*3",
+    code="""
+import time
+    
+def f1(n):
+    for i in range(3*n):
+        do_something()
+
+start  = time.time()
+f1(1000)
+end = time.time()
+""",
+    write_answer=write_answers,
+    code_add_before="""import time
+do_something = lambda : time.sleep(0.0001)
+    """,
+)
+
+
+Questions.regular_question(
+    "q4",
+    4,
+    """
+    What is the runtime of this function?
+    """,
+    "n+2",
+    code="""
+import time
+    
+def f1(n):
+    do_something()
+    do_something()
+    for i in range(n):
+        do_something()
+
+""",
+    write_answer=write_answers,
+    code_add_before="""import time
+do_something = lambda : time.sleep(0.00001)
+    """,
+)
+Questions.regular_question(
+    "q5",
+    5,
+    """
+    What is the runtime of this function?
+    """,
+    "n+m",
+    code="""
+import time
+    
+def f(n,m):
+    for i in range(n):
+        do_something()
+    for i in range(m):
+        do_something()
+
+""",
+    write_answer=write_answers,
+    code_add_before="""import time
+do_something = lambda : time.sleep(0.001)
+    """,
+)
+Questions.regular_question(
+    "q6",
+    6,
+    """
+    What is the runtime of this function?
     """,
     "n**2",
+    code="""
+import time
+    
+def f1(n):
+    for i in range(n):
+        for j in range(n):
+            do_something()
+
+""",
     write_answer=write_answers,
+    code_add_before="""import time
+do_something = lambda : time.sleep(0.00001)
+    """,
+)
+Questions.regular_question(
+    "q7",
+    7,
+    """
+    What is the runtime of this function?
+    """,
+    "n**2",
+    code="""
+import time
+Mysterious_function(100)
+""",
+    write_answer=write_answers,
+    code_add_before="""import time
+do_something = lambda : time.sleep(0.001)
+def Mysterious_function(n):
+    for i in range(n*n):
+        do_something()
+    """,
+)
+Questions.regular_question(
+    "q8",
+    8,
+    """
+    What is the runtime of this function?
+    """,
+    "n*m",
+    code="""
+import time
+    
+def f(n):
+    for i in range(n):
+        for j in range(m):
+            do_something()
+
+""",
+    write_answer=write_answers,
+    code_add_before="""import time
+do_something = lambda : time.sleep(0.0001)
+    """,
+)
+Questions.regular_question(
+    "q9",
+    9,
+    """
+    What is the runtime of this function?
+    """,
+    "n*m**2",
+    code="""
+import time
+Mysterious_function(100)
+""",
+    write_answer=write_answers,
+    code_add_before="""import time
+do_something = lambda : time.sleep(0.001)
+def Mysterious_function(n,m):
+    for i in range(m*m):
+        for j in range(n):
+            do_something()
+    """,
 )
