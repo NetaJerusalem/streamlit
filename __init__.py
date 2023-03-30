@@ -273,8 +273,7 @@ class Questions:
             
         
         def _eval_code() -> None:
-            # eval_code = f"{code_add_before}\n{ses[k_code_to_run]}\n{code_add_after}"
-            eval_code = ses[k_code_to_run]
+            eval_code = f"{code_add_before}\n{ses[k_code_to_run]}\n{code_add_after}"
             logging.info(eval_code)
             ses[k_output] =  subprocess.run(
                 ["python", "-c", eval_code],
@@ -292,7 +291,7 @@ class Questions:
             ses[k_code_to_run] = st_ace(key =key+"_ace",value=ses[k_code], language="python",auto_update=True)
             button, out_code = st.columns([1,5])
             button.button("run code",key=key+"_run",on_click=_eval_code)
-            out_code.text(ses[k_output]+"hhhhhhh")
+            out_code.text(ses[k_output])
             st.text_input("Answer",key=k_answer)
             # evaluate the code
             if st.button("Submit",key=k_button):

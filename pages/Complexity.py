@@ -20,7 +20,6 @@ st.dataframe(
     status_df.df.loc[status_df.df["NAME"] == name].replace([np.nan, " "], "🤔"),
     use_container_width=True,
 )
-st.write(ses)
 Questions.regular_question(
     "q1",
     1,
