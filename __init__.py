@@ -500,6 +500,41 @@ class QuickQuestions:
                 st.write(ses.successes_counter)
 
 
+class RunAndChoiceAnswer:
+    def __init__(
+        self,
+        key: str,
+        questoin: str,
+        num_questoin: int,
+        current_answer: str,
+        code:str="",
+        code_to_add_before: str="",
+        code_to_add_after: str="",
+        write_answer: Optional[WriteAnswers] = None,
+        show_answers: bool = False,
+    ) -> None:
+        k_code = key + "_code"
+        k_code_to_run = key + "_code_to_run"
+        k_output = key + "_output"
+        k_current_answer = key + "_current_answer"
+        k_answer = key + "_answer"
+        k_button = key + "_button"
+        if key not in ses:
+            logging.info("init ses")
+            logging.info(key)
+            ses[key] = "Run"
+            ses[k_code] = code
+            ses[k_code_to_run] = ""
+            ses[k_output] = ""
+            ses[k_answer] = ""
+            ses[k_current_answer] = [
+                sub_pattern.sub("", answer.casefold())
+                for answer in current_answer.split(",")
+            ]
+        with st.container():
+            pass
+
+
 class Utilities:
     """many tools"""
 
