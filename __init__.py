@@ -44,6 +44,18 @@ PATTERN_QUESTION: str = r"(?P<Q>(?P<TAG>^##\d+)\s*(?P<DATA>{.*}$)?(?=\n)(?P<CODE
 sub_pattern = re.compile(CLINE_ANSWER_PATTERN)
 
 
+def def_hb():
+    st.markdown(
+        """<style>.rtl {direction: RTL;}</style>""",
+        unsafe_allow_html=True,
+    )
+
+
+def write_hb(t):
+    t = re.sub(r'`(.*?)\`', r'<code>\1</code>', t)
+    st.markdown('<div class="rtl", >%s</div>' % t, unsafe_allow_html=True)
+
+
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:
     """
     return function that randomly returns emoji
@@ -213,10 +225,8 @@ class Questions:
         file_name: str = Path(__file__).name
         with st.form(f"{form_title}_{file_name}"):
             st.subheader(form_title)
-            for line in questoin.splitlines():
-                # deplay differnt line in different write,
-                # (is the only way to display different lines in st.write)
-                st.write(line)
+            def_hb()
+            write_hb(questoin)
             if caption:
                 st.caption(caption)
             # take the code and remove provided code from the answer
@@ -507,9 +517,9 @@ class RunAndChoiceAnswer:
         questoin: str,
         num_questoin: int,
         current_answer: str,
-        code:str="",
-        code_to_add_before: str="",
-        code_to_add_after: str="",
+        code: str = "",
+        code_to_add_before: str = "",
+        code_to_add_after: str = "",
         write_answer: Optional[WriteAnswers] = None,
         show_answers: bool = False,
     ) -> None:

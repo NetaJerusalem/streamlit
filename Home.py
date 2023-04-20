@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 st.title("Welcome to Neta Senionr Exercises")
-st.write("Please select the required exercise on the left")
+st.markdown("Please select the required exercise on the left `code` text")
 st.image("https://media.giphy.com/media/scZPhLqaVOM1qG4lT9/giphy.gif")
 
 st.write(ses)
