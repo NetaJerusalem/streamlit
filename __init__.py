@@ -38,7 +38,7 @@ LOAD_PATTERN: str = r"^##\d+(.|\n)*?(?=##\d+)"  # https://regex101.com/r/Tphpe0/
 TOP_ROW_PATTERN: str = (
     r"^##\d+\s*(?P<data>{.*}$)?(?=\n)"  # https://regex101.com/r/7oTSAI/1
 )
-CLINE_ANSWER_PATTERN: str = r"\s+|\"|\'"
+CLINE_ANSWER_PATTERN: str = r"\s+|\"|\'|\[|\]"
 PATTERN_QUESTION: str = r"(?P<TAG>^##\d+)\s*(?P<DATA>{.*}$)?(?=\n)(?P<CODE>(.|\n)*?)(?P=TAG)"  # https://regex101.com/r/kJ9a12/1
 PATTERN_QUESTION: str = r"(?P<Q>(?P<TAG>^##\d+)\s*(?P<DATA>{.*}$)?(?=\n)(?P<CODE>(.|\n)*?)(?P=TAG))"  # https://regex101.com/r/iYxRyF/1
 sub_pattern = re.compile(CLINE_ANSWER_PATTERN)
@@ -52,7 +52,7 @@ def def_hb():
 
 
 def write_hb(t):
-    t = re.sub(r'`(.*?)\`', r'<code>\1</code>', t)
+    t = re.sub(r"`(.*?)\`", r"<code>\1</code>", t)
     st.markdown('<div class="rtl", >%s</div>' % t, unsafe_allow_html=True)
 
 
@@ -448,7 +448,7 @@ class QuickQuestions:
             ses.codes = Utilities.load_codes(path)
             ses.bar = 0
             ses.successes_counter = ""
-            ses.sub_pattern = re.compile(r"\s+|\"|\'")
+            ses.sub_pattern = re.compile(CLINE_ANSWER_PATTERN)
             ses.successes_f = False
             ses.sleep_time = seconds / 100
             ses[key_set] = "running"
@@ -466,7 +466,7 @@ class QuickQuestions:
         return f"qq_{str(len(ses.codes))}"
 
     def __check_answer(self, key: str):
-        if ses.codes[0]["output"] == ses[key]:
+        if ses.codes[0]["output"] == ses.sub_pattern.sub("", ses[key]):
             ses.successes_f = True
             self.__next_question()
 
@@ -508,6 +508,103 @@ class QuickQuestions:
                     )
                 ses[self.key_set] = "finished"
                 st.write(ses.successes_counter)
+
+
+class QuickQuestionsNoBar:
+    """
+    This function creates a "quick questions" form for a code file in a specific format, as specified in the README file.
+    The function compares the user's input (answer) to the true output of the code snippet,
+    ignoring spaces, line breaks, quotation marks, doubles or singles.
+
+    Args:
+        name (str): The name of the file from which the code snippet is uploaded. The file must conform to the format specified in the README file.
+        key (Optional[str], optional): When creating multiple quick questions, this argument specifies a unique key for each question.
+        reload (bool, optional): When set to True, deletes all progress and starts the game from the beginning. Defaults to False.
+        seconds (int, optional): The amount of time for each question. Defaults to 40.
+        show_answers (bool, optional): When set to True, displays the current answer, useful for testing. Defaults to False.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        num_questoin: int,
+        reload: bool = False,
+        write_answer: Optional[WriteAnswers] = None,
+        show_answers: bool = False,
+    ) -> None:
+        # init session_stete (ses) variables
+        file_name: str = Path(__file__).name
+        key_set: str = f"quick_questions_{num_questoin}_{file_name}"
+        self.key_set = key_set
+        self.reload = reload
+        self.write_answer = write_answer
+        self.show_answers = show_answers
+        self.num_questoin = num_questoin
+        if key_set not in ses:
+            file_name: str = Path(__file__).name
+            path: Path = Path(__file__).parents[0] / name
+            ses.codes = Utilities.load_codes(path)
+            ses.time = 0
+            ses.score = 0
+            ses.sub_pattern = re.compile(CLINE_ANSWER_PATTERN)
+            ses.successes_f = False
+            ses[key_set] = "running"
+            ses.start_time = time.time()
+        self.run()
+    def __score(self):
+        return 60 - ses.time
+    def __next_question(self):
+        ses.score += self.__score() if ses.successes_f else 0
+        ses.codes.pop(0)
+        ses.successes_f = False
+        ses.next = False
+        ses.time = 0
+
+    def key_q(self) -> str:
+        return f"qq_{str(len(ses.codes))}"
+
+    def __check_answer(self, key: str):
+        if ses.codes[0]["output"] == ses.sub_pattern.sub("", ses[key]):
+            ses.successes_f = True
+            self.__next_question()
+
+    def run(self) -> None:
+        # init placeholder for components
+        q = st.container()
+
+        # main loop, run until finished all code snippets
+        if len(ses.codes) > 1 and ses[self.key_set] == "running":
+            # write the amout of successes
+            code = ses.codes[0]["code"]
+            q.code(code, language="python")
+            input_place = q.empty()
+            input_place.text_input(
+                "What the output of this code?",
+                key=self.key_q(),
+                on_change=self.__check_answer,
+                args=(self.key_q(),),
+            )
+            c1,c2 = q.columns(2)
+            metric_place = c1.empty().metric("time", ses.time)
+            c2.write(f"# score _{ses.score }_")
+            while ses.time < 60:
+                time.sleep(1.0)
+                ses.time += 1
+                metric_place.metric("time", ses.time)
+            self.__next_question()
+            st.experimental_rerun()
+        else:
+            if ses[self.key_set] == "running":
+                finish_time: int = int(time.time() - ses.start_time)
+                count_successes: int = len(re.findall("[😀😁😆😘😍🥰🙂😚]", ses.score))
+                ses.score = f"You answered {count_successes} correct answers in the time of: {finish_time} seconds"
+                if self.write_answer:
+                    self.write_answer.add_answer(
+                        f"correct answers:{count_successes}, time: {finish_time}",
+                        self.num_questoin,
+                    )
+                ses[self.key_set] = "finished"
+                st.write(ses.score)
 
 
 class RunAndChoiceAnswer:
