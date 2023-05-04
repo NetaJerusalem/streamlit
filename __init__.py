@@ -551,8 +551,10 @@ class QuickQuestionsNoBar:
             ses[key_set] = "running"
             ses.start_time = time.time()
         self.run()
+
     def __score(self):
         return 60 - ses.time
+
     def __next_question(self):
         ses.score += self.__score() if ses.successes_f else 0
         ses.codes.pop(0)
@@ -584,7 +586,7 @@ class QuickQuestionsNoBar:
                 on_change=self.__check_answer,
                 args=(self.key_q(),),
             )
-            c1,c2 = q.columns(2)
+            c1, c2 = q.columns(2)
             metric_place = c1.empty().metric("time", ses.time)
             c2.write(f"# score _{ses.score }_")
             while ses.time < 60:
@@ -770,3 +772,45 @@ class Utilities:
             return bool(f_pattern.match(code))
 
         return f
+
+
+def quick_questions_no_bar(path: str, key: str):
+    if key not in ses:
+        ses.start_time = time.time()
+        ses.time_in_q = 0
+        ses.questions = Utilities.load_codes(path)
+        ses.score = 0
+        ses.num_questions = 0
+        ses[key] = "running"
+
+    def __next_question():
+        ses.num_questions += 1
+        ses.time_in_q = 0
+
+    def __check_question():
+        if (
+            sub_pattern.sub("", ses["answer_" + str(ses.num_questions)])
+            == ses.questions[ses.num_questions]["output"]
+        ):
+            ses.score += 100 - ses.time_in_q
+            __next_question()
+
+    while ses.num_questions < len(ses.questions):
+        placeholder = st.empty()
+        with placeholder.container():
+            st.title(f"Question {ses.num_questions+1}")
+            st.code(ses.questions[ses.num_questions]["code"], language="python")
+            st.text_input(
+                label="What this code print",
+                key="answer_" + str(ses.num_questions),
+                on_change=__check_question,
+            )
+            place_time, place_score = st.columns(2)
+            place_time = place_time.empty()
+            place_score.markdown(f"# score _{ses.score}_")
+            while ses.time_in_q < 60:
+                place_time.metric("Time", ses.time_in_q)
+                time.sleep(1)
+                ses.time_in_q += 1
+            __next_question()
+        placeholder.empty()
