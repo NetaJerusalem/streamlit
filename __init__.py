@@ -1,6 +1,7 @@
 import os
 import random
 import pandas as pd
+import gspread
 from pandas import DataFrame
 import re
 from typing import (
@@ -54,6 +55,28 @@ def def_hb():
 def write_hb(t):
     t = re.sub(r"`(.*?)\`", r"<code>\1</code>", t)
     st.markdown('<div class="rtl", >%s</div>' % t, unsafe_allow_html=True)
+
+
+def collect_answers(answer: str, id: int) -> None:
+    # Load the CSV file
+    data_loader = DataLoader("path/to/answers.csv")
+    df = data_loader.df
+
+    # Add the answer to the DataFrame
+    row = df.loc[df["ID"] == id]
+    if row.empty:
+        # If the ID doesn't exist in the DataFrame, add a new row
+        new_row = {"ID": id, "Question": "", "Answer 1": answer}
+        df = df.append(new_row, ignore_index=True)
+    else:
+        # If the ID exists, add the answer to the next empty column
+        for i in range(1, len(df.columns)):
+            if pd.isna(row.iloc[0, i]):
+                df.at[row.index[0], f"Answer {i}"] = answer
+                break
+
+    # Write the DataFrame back to the CSV file
+    df.to_csv("path/to/answers.csv", index=False)
 
 
 def _random_eomji(emojis: set[str]) -> Callable[[], str]:
@@ -165,6 +188,20 @@ class DataLoader:
         file_name = os.path.basename(self.path)
         if ses.user_name == "admin":
             st.download_button(f"download {file_name}", self.df.to_csv(), file_name)
+
+
+class Writer:
+    def __init__(self, spreadsheet_id, sheet_name):
+        self.spreadsheet_id = spreadsheet_id
+        self.sheet_name = sheet_name
+        self.client = gspread.oauth_from_dict(st.secrets["gcp_service_account"])
+        self.sheet = self.client.open(self.spreadsheet_id).worksheet(self.sheet_name)
+
+    def write(self, row, column, data):
+        self.sheet.update_cell(row, column, data)
+
+    def read(self, row, column):
+        return self.sheet.cell(row, column).value
 
 
 class WriteAnswers:
@@ -776,6 +813,7 @@ class Utilities:
 
 def quick_questions_no_bar(path: str, key: str):
     if key not in ses:
+        logging.info("in init")
         ses.start_time = time.time()
         ses.time_in_q = 0
         ses.questions = Utilities.load_codes(path)
@@ -810,7 +848,7 @@ def quick_questions_no_bar(path: str, key: str):
             place_score.markdown(f"# score _{ses.score}_")
             while ses.time_in_q < 60:
                 place_time.metric("Time", ses.time_in_q)
-                time.sleep(1)
                 ses.time_in_q += 1
+                time.sleep(1)
             __next_question()
         placeholder.empty()
