@@ -194,7 +194,9 @@ class Writer:
     def __init__(self, spreadsheet_id, sheet_name):
         self.spreadsheet_id = spreadsheet_id
         self.sheet_name = sheet_name
-        self.client = gspread.oauth_from_dict(st.secrets["gcp_service_account"])
+        self.client, a = gspread.oauth_from_dict(
+            {"installed": dict(st.secrets["gcp_service_account"])}
+        )
         self.sheet = self.client.open(self.spreadsheet_id).worksheet(self.sheet_name)
 
     def write(self, row, column, data):

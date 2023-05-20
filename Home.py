@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 import streamlit as st
 from streamlit import session_state as ses
-from __init__ import DataLoader, Utilities ,Writer
+from __init__ import DataLoader, Utilities, Writer
 
 
 st.session_state.names = DataLoader("names_and_answers/names.csv")
@@ -15,7 +15,7 @@ st.set_page_config(
 st.title("Welcome to Neta Senionr Exercises")
 st.markdown("Please select the required exercise on the left `code` text")
 st.image("https://media.giphy.com/media/scZPhLqaVOM1qG4lT9/giphy.gif")
-writer = Writer("test_ai","Sheet1")
+writer = Writer("test_ai", "Sheet1")
 
 if Utilities.enter_name(st.session_state.names) == "admin":
     logging.info("admin entering")
@@ -31,11 +31,14 @@ if Utilities.enter_name(st.session_state.names) == "admin":
     status_ex1.download()
     status_multi.download()
 
+
 def __write_to_file():
     writer.write(ses.col, ses.row, ses.data)
 
 
-
-st.number_input("column",key="col")
-st.number_input("row",key="row")
-st.text_input("data",key="data",on_change=__write_to_file)
+st.write(st.secrets["gcp_service_account"])
+st.write(type(st.secrets["gcp_service_account"]))
+st.write(dict(st.secrets["gcp_service_account"]))
+st.number_input("column", key="col")
+st.number_input("row", key="row")
+st.text_input("data", key="data", on_change=__write_to_file)
