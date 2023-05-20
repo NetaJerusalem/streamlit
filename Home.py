@@ -36,9 +36,6 @@ def __write_to_file():
     writer.write(ses.col, ses.row, ses.data)
 
 
-st.write(st.secrets["gcp_service_account"])
-st.write(type(st.secrets["gcp_service_account"]))
-st.write(dict(st.secrets["gcp_service_account"]))
 st.number_input("column", key="col")
 st.number_input("row", key="row")
 st.text_input("data", key="data", on_change=__write_to_file)
